@@ -129,4 +129,4 @@ Dies aktualisiert automatisch die `WebUI.h` Header-Datei für den ESP32.
 
 ## 📜 Lizenz
 
-Dieses Projekt steht unter der **MIT License**. Frei nutzbar, anpassbar und weiterverbreitbar für Modellbau-Enthusiasten und Open-Source-Projekte.
+Dieses Projekt steht unter der **GPL-3.0 license**. Frei nutzbar, anpassbar und weiterverbreitbar für Modellbau-Enthusiasten und Open-Source-Projekte.
