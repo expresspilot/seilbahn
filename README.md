@@ -10,17 +10,17 @@ Ein professionelles, verteiltes Mikrocontroller-Steuerungssystem für ein funkti
   - **Antriebsstation (AST) - Master**: Steuert den Hauptseilmotor, Reibräder-Verzögerung/Beschleunigung, hostet das HMI WebUI auf **FreeRTOS Core 0** und verarbeitet Benutzerbefehle.
   - **Gegenstation (GST) - Slave**: Steuert 9 Stepper-Motoren (Reibräder & Wende), wertet Stations-Lichtschranken aus und regelt den Ausfahrtsabstand der Gondeln autonom.
 - **Drahtlose Synchronisation via ESP-NOW**:
-  - Latenzfreie Funkverbindung zwischen AST und GST ohne Router-Zwang.
+  - Latenzfreie Funkverbindung zwischen AST und GST per espNOW.
   - Automatische Verbindungsüberwachung mit Failsafe: Verbindungsabbruch führt automatisch zum Nothalt.
 - **Autonome Gondelabstandshaltung (Distance Control)**:
   - Überwachung des Mindestabstands zwischen aufeinanderfolgenden Kabinen an der Gegenstation.
-  - Automatische Halte- & Ausfahrtsverzögerung des letzten Reibrads (`Left4` / `Right4`), bis der geforderte Seilabstand erreicht ist.
+  - Automatische Halte- & Ausfahrtsverzögerung an der Lichtschranke (`Left4` / `Right4`), bis der geforderte Seilabstand erreicht ist.
 - **Echtzeit-Standortverfolgung (Odometer & Zonen)**:
   - Live-Verfolgung aller Gondeln in den Zonen `AST`, `GST`, `leftTrack` und `rightTrack` inkl. Fortschrittsprozenten.
 - **Sicherheits- & Betriebsmodi**:
-  - **Betriebsarten**: Anwurf- & Abfahrt-Sequenz (Zweistufige Freigabe), Regulärer Halt, Nothalt (E-Stop), Sicherheitsbremse (SIBRE), Langsamfahrt (20% / 10%).
+  - **Betriebsarten**: Anwurf- & Abfahrt-Sequenz (Zweistufige Freigabe), Regulärer Halt, Nothalt, Sicherheitsbremse, Langsamfahrt (20% / 10%).
 - **WebUI HMI Leitstand**:
-  - Hostet ein ansprechendes Dashboard mit Drehregler (Soll-Geschwindigkeit), Tachometer (Echtzeit-Motor-Ist-Geschwindigkeit ab 0.5 m/s), Betriebs-LEDs, Richtungswechsel und Gondel-Übersicht.
+  - Hostet ein Dashboard mit Drehregler (Soll-Geschwindigkeit), Tachometer (Echtzeit-Motor-Ist-Geschwindigkeit ab 0.5 m/s), Betriebs-LEDs, Richtungswechsel und Gondel-Übersicht.
 
 ---
 
