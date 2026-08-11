@@ -9,12 +9,12 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitner Seilbahn Steuerung</title>
+    <title>3S-Seilbahn Steuerung</title>
     <style>
         /* CSS Variables for design system */
         :root {
-            --leitner-blue: #0A3254;
-            --leitner-light-blue: #1A5282;
+            --brand-blue: #0A3254;
+            --brand-light-blue: #1A5282;
             --desk-bg: #dbe2e9;
             --desk-shadow: #98a2ad;
             --desk-highlight: #ffffff;
@@ -109,7 +109,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         .tab-btn.active {
-            background: var(--leitner-light-blue);
+            background: var(--brand-light-blue);
             color: #ffffff;
             box-shadow: 0 4px 10px rgba(26, 82, 130, 0.4);
         }
@@ -185,7 +185,13 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ==================== TAB 1: ÜBERSICHT (LEITNER HMI) ==================== */
+                if (hmiConnBtn) hmiConnBtn.style.color = '#22c55e'; // grün
+                if (espNowStatusDot) espNowStatusDot.style.backgroundColor = '#22c55e';
+                if (espNowStatusText) espNowStatusText.textContent = 'GST verbunden';
+            }
+        }
+
+        /* ==================== TAB 1: ÜBERSICHT (3S HMI) ==================== */
         
         /* HMI Bezel (Outer Frame resembling physical monitor) */
         .hmi-bezel {
@@ -773,7 +779,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .hmi-footer-logo .logo-main {
             font-size: 0.95rem;
             font-weight: 900;
-            color: #1d4ed8; /* Leitner logo blue */
+            color: #1d4ed8; /* Brand logo blue */
             letter-spacing: 2px;
         }
 
@@ -829,14 +835,33 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         .hmi-modal-header {
-            background: #2b3846;
-            color: #ffffff;
-            padding: 8px 12px;
+            background: var(--brand-blue);
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             border-top-left-radius: 6px;
             border-top-right-radius: 6px;
+        }
+
+        .brand-logo {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+            color: #ffffff;
+        }
+
+        .brand-logo span {
+            font-size: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .hmi-modal-header h3 {
@@ -933,7 +958,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         /* Top Blue Accent Strip on Control Panel */
         .desk-header-strip {
-            background: var(--leitner-blue);
+            background: var(--brand-blue);
             height: 75px;
             border-radius: 16px;
             display: flex;
@@ -946,7 +971,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             border-bottom: 3px solid #04192b;
         }
 
-        .leitner-brand {
+        .brand-logo {
             color: #ffffff;
             font-family: Arial, sans-serif;
             font-size: 1.5rem;
@@ -956,7 +981,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
         }
 
-        .leitner-brand span {
+        .brand-logo span {
             font-size: 0.75rem;
             font-weight: bold;
             font-style: normal;
@@ -1418,7 +1443,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 height: 50px;
                 padding: 0 15px;
             }
-            .leitner-brand {
+            .brand-logo {
                 font-size: 1.1rem;
             }
             .control-row {
@@ -1493,6 +1518,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </div>
 
         <div class="system-status">
+            <div class="status-pill" id="espNowStatusPill" style="margin-right: 10px;">
+                <div class="status-dot" id="espNowStatusDot" style="background-color: #ef4444;"></div>
+                <span id="espNowStatusText">GST getrennt</span>
+            </div>
             <div class="status-pill">
                 <div class="status-dot" id="statusDot"></div>
                 <span id="statusText">Verbinde...</span>
@@ -1507,13 +1536,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 <div class="hmi-screen">
                     <!-- HMI Top Header -->
                     <div class="hmi-header">
-                        <div class="hmi-header-left">
-                            <button class="hmi-icon-btn" title="Menü"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
-                            <button class="hmi-icon-btn" title="Zurück"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
-                            <button class="hmi-icon-btn" title="Start"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
-                            <button class="hmi-icon-btn" title="Home"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></button>
-                        </div>
-                        <div class="hmi-header-center">CD6 Leitner-Dreiseilbahn</div>
+                        <div class="hmi-header-center">Seilbahn Modellbau 3S</div>
                         <div class="hmi-header-right">
                             <span id="hmiClock">09:23</span>
                         </div>
@@ -1523,9 +1546,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                     <div class="hmi-status-bar">
                         <!-- Left Icons -->
                         <div class="hmi-status-left">
-                            <div class="hmi-status-icon warning" title="Störung"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg></div>
-                            <div class="hmi-status-icon door" title="Türen"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="3" x2="12" y2="21"></line></svg></div>
-                            <div class="hmi-status-icon info" id="hmiInfoBtn" onclick="toggleHmiInfo()" title="Info"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div>
+                            <div class="hmi-status-icon" id="hmiConnBtn" title="Verbindung GST" style="color: #22c55e;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
                             <div class="hmi-status-icon power-tower" title="Strecke"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M4 22L12 2L20 22M12 2V22M8 12H16M6 17H18"></path></svg></div>
                         </div>
 
@@ -1534,10 +1555,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                             <div class="hmi-brake-indicators">
                                 <span class="hmi-brake-led green" id="hmiLedBB" title="Betriebsbremse (BB)">BB</span>
                                 <span class="hmi-brake-led green" id="hmiLedSB" title="Sicherheitsbremse (SB)">SB</span>
-                            </div>
-                            <div class="hmi-distance-counter">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="2"></rect><line x1="6" y1="7" x2="6" y2="11"></line><line x1="10" y1="7" x2="10" y2="11"></line><line x1="14" y1="7" x2="14" y2="11"></line><line x1="18" y1="7" x2="18" y2="11"></line></svg>
-                                <span id="hmiDistanceVal">41.6 m</span>
                             </div>
                             <!-- Circular speedometer -->
                             <div class="hmi-circular-gauge">
@@ -1555,109 +1572,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
                         <!-- Right Icons -->
                         <div class="hmi-status-right">
-                            <div class="hmi-status-icon speaker" title="Ton"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></div>
-                            <div class="hmi-status-icon clock" title="Zeiten"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
-                            <div class="hmi-status-icon trash" title="Papierkorb"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div>
                             <div class="hmi-status-icon stats" id="hmiSettingsBtn" onclick="toggleHmiSettings()" title="Einstellungen (LED)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
                         </div>
                     </div>
 
                     <!-- HMI Main Canvas (Interactive Screens) -->
                     <div class="hmi-content">
-                        <!-- VIEW 1: OPERATIONS MODE VIEW -->
-                        <div class="hmi-view active" id="hmiViewOperations">
-                            <div class="hmi-operations-grid">
-                                <!-- Left Column: Operations & Sub-operations Mode -->
-                                <div class="hmi-card">
-                                    <div class="hmi-card-title">Operations mode</div>
-                                    <div class="hmi-card-subtitle">Sub-operations mode</div>
-                                    
-                                    <div class="hmi-btn-grid">
-                                        <button class="hmi-toggle-btn active" id="hmiBtnUnstaffedDrive" onclick="toggleHmiBtn('hmiBtnUnstaffedDrive')">
-                                            <span class="hmi-btn-led"></span>
-                                            Drive station unstaffed
-                                        </button>
-                                        <button class="hmi-toggle-btn active" id="hmiBtnUnstaffedReturn" onclick="toggleHmiBtn('hmiBtnUnstaffedReturn')">
-                                            <span class="hmi-btn-led"></span>
-                                            Return station unstaffed
-                                        </button>
-                                        <button class="hmi-toggle-btn warning" id="hmiBtnPassengerDeactivated" onclick="toggleHmiBtn('hmiBtnPassengerDeactivated')">
-                                            <span class="hmi-btn-led"></span>
-                                            Passenger mode deactivated
-                                        </button>
-                                        <button class="hmi-toggle-btn" id="hmiBtnRunReturn" onclick="toggleHmiBtn('hmiBtnRunReturn')">
-                                            <span class="hmi-btn-led"></span>
-                                            Run from return station
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Right Column: Bahnhof 12 (Garage & Checklist) -->
-                                <div class="hmi-card">
-                                    <div class="hmi-card-title">Bahnhof 12</div>
-                                    
-                                    <div class="hmi-bahnhof-split">
-                                        <!-- Left Sub-column: Modes -->
-                                        <div class="hmi-bahnhof-modes">
-                                            <button class="hmi-toggle-btn active" id="hmiBtnNormalMode" onclick="selectBahnhofMode('normal')">
-                                                <span class="hmi-btn-led blue"></span>
-                                                Normal mode
-                                            </button>
-                                            <button class="hmi-toggle-btn" id="hmiBtnGarageEvening" onclick="selectBahnhofMode('evening')">
-                                                <span class="hmi-btn-led blue"></span>
-                                                Garage evening
-                                            </button>
-                                            <button class="hmi-toggle-btn" id="hmiBtnGarageMorning" onclick="selectBahnhofMode('morning')">
-                                                <span class="hmi-btn-led blue"></span>
-                                                Garage morning
-                                            </button>
-                                        </div>
-
-                                        <!-- Right Sub-column: Checklist -->
-                                        <div class="hmi-checklist">
-                                            <div class="hmi-check-item">
-                                                <span class="hmi-check-icon checked" id="hmiCheckPosition">✔</span>
-                                                <span class="hmi-check-label">Position Ropeway</span>
-                                            </div>
-                                            <div class="hmi-check-item">
-                                                <span class="hmi-check-icon checked" id="hmiCheckAux">✔</span>
-                                                <span class="hmi-check-label">Auxiliary operation</span>
-                                                <div class="hmi-check-sub">
-                                                    <span>CC <span class="hmi-subcheck-check">✔</span></span>
-                                                    <span>AST <span class="hmi-subcheck-check">✔</span></span>
-                                                </div>
-                                            </div>
-                                            <div class="hmi-check-item">
-                                                <span class="hmi-check-icon checked" id="hmiCheckReady">✔</span>
-                                                <span class="hmi-check-label">Ropeway ready</span>
-                                            </div>
-                                            <div class="hmi-check-item border-box">
-                                                <span class="hmi-check-label">connection chain</span>
-                                            </div>
-                                            <div class="hmi-manual-controls">
-                                                <div class="hmi-control-box">
-                                                    <span class="hmi-box-label">move</span>
-                                                    <div class="hmi-arrows">
-                                                        <button class="arrow-btn left" onmousedown="pressHmiMove('left')" onmouseup="releaseHmiMove()">&lt;</button>
-                                                        <button class="arrow-btn right" onmousedown="pressHmiMove('right')" onmouseup="releaseHmiMove()">&gt;</button>
-                                                    </div>
-                                                </div>
-                                                <div class="hmi-control-box">
-                                                    <span class="hmi-box-label">move free</span>
-                                                    <div class="hmi-arrows">
-                                                        <button class="arrow-btn left" onmousedown="pressHmiMove('free-left')" onmouseup="releaseHmiMove()">&lt;</button>
-                                                        <button class="arrow-btn right" onmousedown="pressHmiMove('free-right')" onmouseup="releaseHmiMove()">&gt;</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- VIEW 2: SCHEMATIC/TRACK VIEW -->
-                        <div class="hmi-view" id="hmiViewTrack">
+                        <div class="hmi-view active" id="hmiViewTrack">
                             <div class="hmi-track-canvas-container">
                                 <svg class="hmi-track-svg" viewBox="0 0 800 360" id="hmiTrackSvg">
                                     <!-- Definitions for gradients and elements -->
@@ -1672,35 +1595,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                                         </linearGradient>
                                     </defs>
                                     
-                                    <!-- Station 12 Text and indicators -->
-                                    <text x="60" y="52" fill="#3b82f6" font-size="20" font-weight="bold">12</text>
-                                    <!-- Warning icon and passenger icon next to 12 -->
-                                    <g transform="translate(85, 38)">
-                                        <path d="M6 2 L12 11 L0 11 Z" fill="#f97316" />
-                                        <text x="6" y="10" fill="#fff" font-size="7" font-weight="bold" text-anchor="middle">!</text>
-                                    </g>
-                                    <!-- Person icon AST -->
-                                    <g transform="translate(110, 38)" fill="#22c55e">
-                                        <circle cx="5" cy="3" r="2.5"></circle>
-                                        <path d="M1 8 C1 6, 9 6, 9 8 L9 12 L1 12 Z"></path>
-                                    </g>
-                                    
                                     <!-- Station 11 Text and indicators -->
-                                    <text x="730" y="52" fill="#ef4444" font-size="20" font-weight="bold">11</text>
-                                    <!-- Person icon GST -->
-                                    <g transform="translate(675, 38)" fill="#22c55e">
-                                        <circle cx="5" cy="3" r="2.5"></circle>
-                                        <path d="M1 8 C1 6, 9 6, 9 8 L9 12 L1 12 Z"></path>
-                                    </g>
-                                    <!-- Warning icon GST -->
-                                    <g transform="translate(695, 38)">
-                                        <path d="M6 2 L12 11 L0 11 Z" fill="#f97316" />
-                                        <text x="6" y="10" fill="#fff" font-size="7" font-weight="bold" text-anchor="middle">!</text>
-                                    </g>
+                                    <text x="60" y="52" fill="#3b82f6" font-size="20" font-weight="bold">AST</text>
+                                    
+                                    <!-- Station 12 Text and indicators -->
+                                    <text x="730" y="52" fill="#3b82f6" font-size="20" font-weight="bold">GST</text>
 
                                     <!-- The main oval stadium rope track -->
-                                    <path d="M 120 70 A 50 50 0 0 0 120 170 L 680 170 A 50 50 0 0 0 680 70 Z" fill="none" stroke="#94a3b8" stroke-width="20" stroke-linecap="round" />
-                                    <path d="M 120 70 A 50 50 0 0 0 120 170 L 680 170 A 50 50 0 0 0 680 70 Z" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="10 10" />
+                                    <path d="M 120 70 A 50 50 0 0 0 120 170 L 680 170 A 50 50 0 0 0 680 70 Z" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+                                
 
                                     <!-- Spinning yellow bullwheels -->
                                     <g id="hmiWheelAST" transform="translate(120, 120)">
@@ -1718,54 +1621,11 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                                         <line x1="0" y1="-36" x2="0" y2="36" stroke="#854d0e" stroke-width="4" />
                                     </g>
 
-                                    <!-- Support towers along top and bottom -->
-                                    <!-- Top track tower rollers (y = 70) -->
-                                    <g transform="translate(200, 70)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(280, 70)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(360, 70)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(440, 70)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(520, 70)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(600, 70)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-
-                                    <!-- Bottom track tower rollers (y = 170) -->
-                                    <g transform="translate(200, 170)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(280, 170)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(360, 170)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(440, 170)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(520, 170)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(600, 170)" class="hmi-tower-rollers"><circle cx="-5" cy="-10" r="3" fill="#334155"/><circle cx="5" cy="-10" r="3" fill="#334155"/><circle cx="-5" cy="10" r="3" fill="#334155"/><circle cx="5" cy="10" r="3" fill="#334155"/><line x1="0" y1="-10" x2="0" y2="10" stroke="#334155" stroke-width="2"/></g>
-
-                                    <!-- Station entry/exit roller assemblies -->
-                                    <g transform="translate(70, 120)" class="hmi-tower-rollers"><circle cx="-10" cy="-5" r="3" fill="#334155"/><circle cx="10" cy="-5" r="3" fill="#334155"/><circle cx="-10" cy="5" r="3" fill="#334155"/><circle cx="10" cy="5" r="3" fill="#334155"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#334155" stroke-width="2"/></g>
-                                    <g transform="translate(730, 120)" class="hmi-tower-rollers"><circle cx="-10" cy="-5" r="3" fill="#334155"/><circle cx="10" cy="-5" r="3" fill="#334155"/><circle cx="-10" cy="5" r="3" fill="#334155"/><circle cx="10" cy="5" r="3" fill="#334155"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#334155" stroke-width="2"/></g>
-
-                                    <!-- Central towers (green lines with dots) -->
                                     <g transform="translate(240, 120)">
-                                        <line x1="0" y1="-50" x2="0" y2="50" stroke="#64748b" stroke-width="2" />
-                                        <circle cx="0" cy="0" r="8" fill="#22c55e" stroke="#fff" stroke-width="2" id="hmiTower1" />
-                                    </g>
-                                    <g transform="translate(400, 120)">
-                                        <line x1="0" y1="-50" x2="0" y2="50" stroke="#64748b" stroke-width="2" />
-                                        <circle cx="0" cy="0" r="8" fill="#22c55e" stroke="#fff" stroke-width="2" id="hmiTower2" />
-                                    </g>
-                                    <g transform="translate(560, 120)">
                                         <line x1="0" y1="-50" x2="0" y2="50" stroke="#64748b" stroke-width="2" />
                                         <circle cx="0" cy="0" r="8" fill="#22c55e" stroke="#fff" stroke-width="2" id="hmiTower3" />
                                     </g>
-                                    
-                                    <!-- Station cabin chair indicators at bottom of each station -->
-                                    <g transform="translate(130, 200)">
-                                        <!-- Chair icon -->
-                                        <rect x="0" y="0" width="12" height="12" fill="none" stroke="#475569" stroke-width="2" />
-                                        <line x1="6" y1="0" x2="6" y2="-12" stroke="#475569" stroke-width="2" />
-                                    </g>
-                                    <g transform="translate(660, 200)">
-                                        <!-- Chair icon -->
-                                        <rect x="0" y="0" width="12" height="12" fill="none" stroke="#475569" stroke-width="2" />
-                                        <line x1="6" y1="0" x2="6" y2="-12" stroke="#475569" stroke-width="2" />
-                                    </g>
 
-                                    <!-- Gondolas group rendered by JS -->
                                     <g id="hmiGondolaGroup"></g>
                                 </svg>
                             </div>
@@ -1778,13 +1638,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                             <button class="hmi-footer-btn" onclick="toggleHmiView()" title="Ansicht umschalten">
                                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
                             </button>
-                            <button class="hmi-footer-btn" title="Benutzer">
-                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                            </button>
                         </div>
                         <div class="hmi-footer-logo">
-                            <span class="logo-main">LEITNER</span>
-                            <span class="logo-sub">ropeways</span>
+                            <span class="logo-main">3S ROPEWAY</span>
+                            <span class="logo-sub">control system</span>
                         </div>
                         <div class="hmi-footer-right">
                             <button class="hmi-power-btn" onclick="shutdownHmi()" title="System ausschalten">
@@ -1826,52 +1683,37 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                     <!-- SETTINGS POPUP MODAL (⚙) -->
                     <div class="hmi-modal" id="hmiSettingsModal" style="display: none;">
                         <div class="hmi-modal-header">
-                            <h3>NeoPixel LED Einstellungen</h3>
+                            <h3>Gondel Einstellungen</h3>
                             <button class="hmi-modal-close" onclick="toggleHmiSettings()">&times;</button>
                         </div>
                         <div class="hmi-modal-body">
-                            <div class="hmi-settings-section">
-                                <div class="hmi-settings-row">
-                                    <span class="info-label">Aktuelle LED Farbe:</span>
-                                    <div id="hmiLedColorStatus" style="width: 25px; height: 25px; border-radius: 50%; border: 2px solid #334e68; background: #000; box-shadow: 0 0 5px #000; transition: all 0.3s;"></div>
+                            <div class="hmi-settings-section" style="display: flex; flex-direction: column; gap: 12px; padding: 10px 0;">
+                                <div class="hmi-settings-row" style="justify-content: space-between; margin-bottom: 5px;">
+                                    <span class="info-label" style="font-weight: bold; color: #475569; font-size: 0.95rem;">Anzahl Gondeln:</span>
+                                    <input type="number" id="hmiGondolaCount" value="3" min="1" max="50" style="width: 60px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; text-align: center; outline: none;" onchange="setGondolaCount(this.value)">
                                 </div>
-                                <div class="hmi-settings-row">
-                                    <span class="info-label">Farbe wählen:</span>
-                                    <div class="color-picker-wrapper" style="margin: 0;">
-                                        <input type="color" id="hmiLedColorPicker" value="#000000" onchange="sendLedColor(this.value)">
-                                    </div>
+                                <div class="hmi-settings-row" style="justify-content: space-between; margin-bottom: 5px;">
+                                    <span class="info-label" style="font-weight: bold; color: #475569; font-size: 0.95rem;">Streckenlänge (Steps):</span>
+                                    <input type="number" id="hmiTrackLength" value="400000" min="1000" max="10000000" step="1000" style="width: 100px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; text-align: center; color: #0f172a; outline: none; font-size: 0.95rem;" onchange="setTrackLength(this.value)">
                                 </div>
-                                <div class="hmi-settings-row">
-                                    <span class="info-label">Schnellwahl:</span>
+                                <div class="hmi-settings-row" style="justify-content: space-between; margin-bottom: 5px;">
+                                    <span class="info-label" style="font-weight: bold; color: #475569; font-size: 0.95rem;">Abstand (Seil-Schritte):</span>
+                                    <input type="number" id="hmiGondolaDistance" value="10000" min="1000" max="100000" step="100" style="width: 80px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; text-align: center; color: #0f172a; outline: none; font-size: 0.95rem;" onchange="setGondolaDistance(this.value)">
                                 </div>
-                                <div class="color-presets" style="justify-content: center; margin-top: 5px; margin-bottom: 12px;">
-                                    <div class="color-preset-btn" style="background: red;" onclick="sendPresetColor(255, 0, 0)"></div>
-                                    <div class="color-preset-btn" style="background: green;" onclick="sendPresetColor(0, 255, 0)"></div>
-                                    <div class="color-preset-btn" style="background: blue;" onclick="sendPresetColor(0, 0, 255)"></div>
-                                    <div class="color-preset-btn" style="background: yellow;" onclick="sendPresetColor(255, 255, 0)"></div>
-                                    <div class="color-preset-btn" style="background: purple;" onclick="sendPresetColor(128, 0, 128)"></div>
-                                    <div class="color-preset-btn" style="background: black; border: 2px solid #555;" onclick="sendPresetColor(0, 0, 0)"></div>
+                                <hr style="border: 0; border-top: 1px solid #e2e8f0;">
+                                <div style="font-size: 0.9rem; font-weight: bold; color: #475569; margin-bottom: 4px;">Strecke Messen</div>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button class="hmi-control-btn" style="flex: 1;" onclick="startMeasurement()">Messung Starten</button>
+                                    <button class="hmi-control-btn" style="flex: 1; background: #64748b;" onclick="stopMeasurement()">Stopp</button>
                                 </div>
-                            </div>
-                            
-                            <!-- Calibration & Gondolas Section -->
-                            <div class="hmi-settings-section" style="border-top: 2px solid #cbd5e1; padding-top: 12px; margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                <div class="hmi-settings-row">
-                                    <span class="info-label" style="font-weight: bold; color: #475569;">Kalibrierung & Gondeln</span>
+                                <div style="font-size: 0.85rem; color: #64748b; text-align: center; font-family: monospace;">
+                                    Gemessene Steps: <span id="hmiMeasureVal" style="font-weight: bold; color: #0f172a;">0</span>
                                 </div>
-                                <div class="hmi-settings-row">
-                                    <span class="info-label">Gondel-Anzahl:</span>
-                                    <input type="number" id="hmiGondolaCount" value="3" min="1" max="10" style="width: 55px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; text-align: center; color: #334155; outline: none;" onchange="setGondolaCount(this.value)">
-                                </div>
-                                <div class="hmi-settings-row">
-                                    <span class="info-label">Status:</span>
-                                    <span class="info-val" id="hmiCalibStatus" style="color: #64748b; font-weight: bold;">Unkalibriert</span>
-                                </div>
-                                <div class="hmi-settings-row" style="margin-top: 4px;">
-                                    <button class="hmi-toggle-btn" id="hmiBtnCalibrate" onclick="startCalibration()" style="padding: 10px 12px; font-size: 0.75rem; text-align: center; justify-content: center; width: 100%; font-weight: bold; display: flex; gap: 10px; align-items: center;">
-                                        <span class="hmi-btn-led" id="hmiCalibLed" style="margin: 0;"></span>
-                                        Kalibrierung starten
-                                    </button>
+                                <hr style="border: 0; border-top: 1px solid #e2e8f0;">
+                                <div style="font-size: 0.9rem; font-weight: bold; color: #475569; margin-bottom: 4px;">GST Debug (Abstand)</div>
+                                <div style="font-size: 0.85rem; color: #64748b; font-family: monospace; display: flex; flex-direction: column; gap: 4px;">
+                                    <div>Holding Gondola: <span id="gstDebugHolding" style="font-weight: bold; color: #0f172a;">-</span></div>
+                                    <div>Rope Steps: <span id="gstDebugSteps" style="font-weight: bold; color: #0f172a;">-</span></div>
                                 </div>
                             </div>
                         </div>
@@ -1880,15 +1722,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             </div>
         </div>
 
-        <!-- ==================== TAB 2: STEUERUNG (LEITNER PANEL) ==================== -->
+        <!-- ==================== TAB 2: STEUERUNG (CONTROL PANEL) ==================== -->
         <div id="control" class="tab-content">
             <div class="desk-outer">
                 <div class="desk-inner">
                     <!-- Blue Header Strip -->
                     <div class="desk-header-strip">
-                        <div class="leitner-brand">
-                            LEITNER
-                            <span>ropeways</span>
+                        <div class="brand-logo">
+                            3S ROPEWAY
+                            <span>control system</span>
                         </div>
                         <div class="mic-mockup"></div>
                     </div>
@@ -1897,13 +1739,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                     <div class="control-grid">
                         <!-- UPPER ROW (Centered Buttons) -->
                         <div class="control-row row-upper">
-                            <!-- ALARM -->
-                            <div class="control-widget">
-                                <span class="control-label">Alarm</span>
-                                <div class="collar">
-                                    <button class="push-btn btn-yellow" id="btnAlarm" onmousedown="pressButton('alarm', true)" onmouseup="pressButton('alarm', false)" onmouseleave="pressButton('alarm', false)"></button>
-                                </div>
-                            </div>
 
                             <!-- GROUP TRACK: HALT / NOTHALT / SICHERHEITSBREMSE -->
                             <div class="group-track-1">
@@ -1945,14 +1780,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                                 </div>
                             </div>
 
-                            <!-- FAHRTAUFFORDERUNG -->
-                            <div class="control-widget">
-                                <span class="control-label">Fahrtaufforderung</span>
-                                <div class="collar">
-                                    <button class="push-btn btn-dark" id="btnFahrtReq" onmousedown="pressButton('fahrt_req', true)" onmouseup="pressButton('fahrt_req', false)" onmouseleave="pressButton('fahrt_req', false)"></button>
-                                </div>
-                            </div>
-
                             <!-- ANWURF -->
                             <div class="control-widget">
                                 <span class="control-label">Anwurf</span>
@@ -1991,7 +1818,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                                         <div class="poti-knob" id="potiKnob">
                                             <div class="poti-indicator" id="potiIndicator" style="transform: rotate(-135deg);"></div>
                                         </div>
-                                        <div class="poti-display" id="potiDisplay">0.0 m/s</div>
+                                        <div class="poti-display" id="potiDisplay">0.5 m/s</div>
                                     </div>
                                 </div>
                             </div>
@@ -2003,85 +1830,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     </main>
 
     <script>
-        // --- Web Audio API Synth for retro physical sounds ---
-        let audioCtx = null;
-        function getAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            return audioCtx;
-        }
-
-        // Play clicking sound of mechanical relay / button
-        function playClickSound(frequency = 120, duration = 0.05, type = 'sine') {
-            try {
-                const ctx = getAudioContext();
-                if (ctx.state === 'suspended') ctx.resume();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                
-                osc.type = type;
-                osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(10, ctx.currentTime + duration);
-                
-                gain.gain.setValueAtTime(0.15, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-                
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                osc.start();
-                osc.stop(ctx.currentTime + duration);
-            } catch(e) {}
-        }
-
-        // Play continuous warning alarm siren
-        let alarmOsc = null;
-        let alarmGain = null;
-        function startAlarmSound() {
-            try {
-                const ctx = getAudioContext();
-                if (ctx.state === 'suspended') ctx.resume();
-                if (alarmOsc) return;
-
-                alarmOsc = ctx.createOscillator();
-                alarmGain = ctx.createGain();
-                
-                alarmOsc.type = 'sawtooth';
-                alarmOsc.frequency.setValueAtTime(400, ctx.currentTime);
-                
-                // Siren modulation
-                const lfo = ctx.createOscillator();
-                const lfoGain = ctx.createGain();
-                lfo.frequency.value = 3.5; // 3.5 Hz wobbling
-                lfoGain.gain.value = 150; // Pitch range
-                
-                lfo.connect(lfoGain);
-                lfoGain.connect(alarmOsc.frequency);
-                
-                alarmGain.gain.setValueAtTime(0, ctx.currentTime);
-                alarmGain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.1);
-                
-                alarmOsc.connect(alarmGain);
-                alarmGain.connect(ctx.destination);
-                
-                lfo.start();
-                alarmOsc.start();
-            } catch(e) {}
-        }
-
-        function stopAlarmSound() {
-            if (alarmOsc) {
-                try {
-                    const ctx = getAudioContext();
-                    alarmGain.gain.setValueAtTime(alarmGain.gain.value, ctx.currentTime);
-                    alarmGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-                    alarmOsc.stop(ctx.currentTime + 0.12);
-                } catch(e) {}
-                alarmOsc = null;
-                alarmGain = null;
-            }
-        }
+        // --- Sounds disabled ---
+        function playClickSound() {}
+        function startAlarmSound() {}
+        function stopAlarmSound() {}
 
         // --- System State ---
         const state = {
@@ -2092,7 +1844,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             load: 0,
             nothalt: false,
             sibre: false,
-            speed: 0.5,          // 0.5 - 8.0 m/s
+            halt: false,
+            espNowConnected: false,
+            speed: 0.0,          // Current actual speed (m/s)
             targetSpeed: 0.5,    // from POTI (0.5 - 8.0 m/s)
             direction: 'forward',// 'forward' or 'backwards'
             slowMode: 'normal',  // 'normal', 'slow1', 'slow2'
@@ -2108,48 +1862,39 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 { id: 2, zone: 'leftTrack', progress: 50, isStopped: false },
                 { id: 3, zone: 'rightTrack', progress: 80, isStopped: false }
             ],
-            calibration: {
-                state: 0,
-                steps: 0,
-                isCalibrated: false,
-                gondolaCount: 3
-            }
+            gondolaConfig: { gondolaCount: 3, trackLength: 400000, gondolaDistance: 10000, currentRopeSteps: 0 }
         };
 
-        // --- HTTP Polling Setup (ersetzt WebSocket) ---
-        let pollTimer = null;
-        function initPolling() {
-            updateConnectionStatus(false, 'Verbinde...');
+        // --- Core logic ---
+        function initApp() {
+            // Initial UI setup (defaults to disconnected)
+            updateConnectionVisuals();
+            updateNothaltVisuals();
+            updateSibreVisuals();
+            updatePotiVisuals(state.targetSpeed);
 
-            // Versuche erste Verbindung
-            fetch('/status')
-                .then(r => r.json())
-                .then(msg => {
-                    updateConnectionStatus(true, 'Verbunden');
-                    document.getElementById('simBanner').style.display = 'none';
-                    state.isSimulation = false;
-                    handleEspMessage(msg);
-
-                    // Starte periodisches Polling alle 250ms
-                    if (pollTimer) clearInterval(pollTimer);
-                    pollTimer = setInterval(() => {
-                        fetch('/status')
-                            .then(r => r.json())
-                            .then(msg => {
-                                handleEspMessage(msg);
-                                if (!state.isConnected) {
-                                    updateConnectionStatus(true, 'Verbunden');
-                                    document.getElementById('simBanner').style.display = 'none';
-                                    state.isSimulation = false;
-                                }
-                            })
-                            .catch(() => {
-                                activateSimulationMode();
-                            });
-                    }, 250);
+            fetchStatus()
+                .then(() => {
+                    setInterval(fetchStatus, 250);
                 })
                 .catch(() => {
                     activateSimulationMode();
+                });
+        }
+
+        function fetchStatus() {
+            return fetch('/status')
+                .then(res => {
+                    if (!res.ok) throw new Error("HTTP error " + res.status);
+                    return res.json();
+                })
+                .then(msg => {
+                    updateConnectionStatus(true, 'Verbunden');
+                    handleEspMessage(msg);
+                })
+                .catch(err => {
+                    updateConnectionStatus(false, 'Verbindungsfehler');
+                    throw err;
                 });
         }
 
@@ -2195,9 +1940,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             
             if (msg.speed !== undefined) {
                 state.speed = msg.speed; // Expected in m/s (0.0 to 8.0)
-                if (!isDraggingPoti) {
-                    updatePotiVisuals(state.speed);
-                }
             }
             
             if (msg.sensors !== undefined) {
@@ -2217,7 +1959,23 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 state.sibre = !!msg.sibre;
                 updateSibreVisuals();
             }
+
+            if (msg.gstVirtualRopeSteps !== undefined) {
+                state.gstVirtualRopeSteps = msg.gstVirtualRopeSteps;
+            }
+            if (msg.gstHoldingGondola !== undefined) {
+                state.gstHoldingGondola = !!msg.gstHoldingGondola;
+            }
             
+            if (msg.halt !== undefined) {
+                state.halt = !!msg.halt;
+            }
+            
+            if (msg.esp_now_connected !== undefined) {
+                state.espNowConnected = !!msg.esp_now_connected;
+                updateConnectionVisuals();
+            }
+
             if (msg.ledColor !== undefined) {
                 state.ledColor = msg.ledColor;
                 updateLedColorVisuals();
@@ -2227,9 +1985,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 state.gondolas = msg.gondolas;
             }
 
-            if (msg.calibration !== undefined) {
-                state.calibration = msg.calibration;
-                updateCalibrationUI();
+            if (msg.gondolaConfig !== undefined) {
+                state.gondolaConfig = msg.gondolaConfig;
+                updateGondolaConfigUI();
             }
         }
 
@@ -2486,6 +2244,27 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             updateNothaltVisuals();
             sendCommand({ action: "nothalt", value: state.nothalt });
         }
+        function updateConnectionVisuals() {
+            const btnAnwurf = document.getElementById('btnAnwurf');
+            const hmiConnBtn = document.getElementById('hmiConnBtn');
+            const espNowStatusPill = document.getElementById('espNowStatusPill');
+            const espNowStatusDot = document.getElementById('espNowStatusDot');
+            const espNowStatusText = document.getElementById('espNowStatusText');
+
+            if (!state.espNowConnected) {
+                btnAnwurf.style.opacity = '0.3';
+                btnAnwurf.style.pointerEvents = 'none';
+                if (hmiConnBtn) hmiConnBtn.style.color = '#ef4444'; // rot
+                if (espNowStatusDot) espNowStatusDot.style.backgroundColor = '#ef4444';
+                if (espNowStatusText) espNowStatusText.textContent = 'GST getrennt';
+            } else {
+                btnAnwurf.style.opacity = '1';
+                btnAnwurf.style.pointerEvents = 'auto';
+                if (hmiConnBtn) hmiConnBtn.style.color = '#22c55e'; // grün
+                if (espNowStatusDot) espNowStatusDot.style.backgroundColor = '#22c55e';
+                if (espNowStatusText) espNowStatusText.textContent = 'GST verbunden';
+            }
+        }
 
         function updateNothaltVisuals() {
             const btn = document.getElementById('btnNothalt');
@@ -2640,7 +2419,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             const displaySpeed = Math.min(speedMps, limit);
 
             if (potiIndicator) potiIndicator.style.transform = `rotate(${currentPotiAngle}deg)`;
-            if (potiDisplay) potiDisplay.textContent = `${displaySpeed.toFixed(1)} m/s`;
+            if (potiDisplay) potiDisplay.textContent = `${speedMps.toFixed(1)} m/s`;
         }
 
         // --- LED & Colors logic ---
@@ -2694,14 +2473,65 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             }
         }
 
-        // --- Calibration & Gondolas logic ---
+        // --- Gondolas logic ---
         function setGondolaCount(val) {
             const count = Math.min(10, Math.max(1, parseInt(val) || 3));
-            state.calibration.gondolaCount = count;
+            state.gondolaConfig.gondolaCount = count;
             sendCommand({ action: "setGondolaCount", value: count });
             if (state.isSimulation) {
                 adjustGondolaCount(count);
             }
+        }
+
+        function setTrackLength(val) {
+            const dist = Math.max(1000, parseInt(val) || 400000);
+            state.gondolaConfig.trackLength = dist;
+            sendCommand({ action: "setTrackLength", value: dist });
+        }
+
+        function setGondolaDistance(val) {
+            const dist = Math.max(1000, parseInt(val) || 10000);
+            state.gondolaConfig.gondolaDistance = dist;
+            sendCommand({ action: "setGondolaDistance", value: dist });
+        }
+
+        let isMeasuring = false;
+        let measureStartOdo = 0;
+
+        function startMeasurement() {
+            isMeasuring = true;
+            measureStartOdo = (state.gondolaConfig && state.gondolaConfig.currentRopeSteps) ? state.gondolaConfig.currentRopeSteps : 0;
+        }
+
+        function stopMeasurement() {
+            isMeasuring = false;
+        }
+
+        function updateGondolaConfigUI() {
+            if (!state.gondolaConfig) return;
+            const countInput = document.getElementById('hmiGondolaCount');
+            if (countInput && document.activeElement !== countInput) {
+                countInput.value = state.gondolaConfig.gondolaCount;
+            }
+            const distInput = document.getElementById('hmiTrackLength');
+            if (distInput && document.activeElement !== distInput) {
+                distInput.value = state.gondolaConfig.trackLength;
+            }
+            const gdistInput = document.getElementById('hmiGondolaDistance');
+            if (gdistInput && document.activeElement !== gdistInput) {
+                gdistInput.value = state.gondolaConfig.gondolaDistance;
+            }
+            
+            if (isMeasuring) {
+                const currentOdo = state.gondolaConfig.currentRopeSteps || 0;
+                document.getElementById('hmiMeasureVal').innerText = Math.abs(currentOdo - measureStartOdo);
+            }
+            
+            // Update debug info
+            const debugHolding = document.getElementById('gstDebugHolding');
+            if (debugHolding) debugHolding.innerText = state.gstHoldingGondola ? "YES" : "NO";
+            const debugSteps = document.getElementById('gstDebugSteps');
+            if (debugSteps) debugSteps.innerText = state.gstVirtualRopeSteps !== undefined ? state.gstVirtualRopeSteps : "-";
         }
 
         function adjustGondolaCount(count) {
@@ -2718,67 +2548,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 state.gondolas = state.gondolas.slice(0, count);
             }
             state.gondolas.forEach((g, idx) => { g.id = idx + 1; });
-        }
-
-        function startCalibration() {
-            playClickSound(180, 0.05);
-            if (state.isSimulation) {
-                state.calibration = {
-                    state: 1,
-                    steps: 0,
-                    isCalibrated: false,
-                    gondolaCount: state.gondolas.length
-                };
-                updateCalibrationUI();
-            } else {
-                sendCommand({ action: "startCalibration" });
-            }
-        }
-
-        function updateCalibrationUI() {
-            if (!state.calibration) return;
-            
-            const countInput = document.getElementById('hmiGondolaCount');
-            if (countInput && document.activeElement !== countInput) {
-                countInput.value = state.calibration.gondolaCount;
-            }
-            
-            const statusVal = document.getElementById('hmiCalibStatus');
-            const calibLed = document.getElementById('hmiCalibLed');
-            const calibBtn = document.getElementById('hmiBtnCalibrate');
-            
-            if (statusVal) {
-                switch (state.calibration.state) {
-                    case 0:
-                        statusVal.textContent = "Unkalibriert";
-                        statusVal.style.color = "#64748b";
-                        break;
-                    case 1:
-                        statusVal.textContent = "Warte auf Ausfahrt...";
-                        statusVal.style.color = "#d97706";
-                        break;
-                    case 2:
-                        statusVal.textContent = `Kalibriere (${state.calibration.steps} Schritte)`;
-                        statusVal.style.color = "#2563eb";
-                        break;
-                    case 3:
-                        statusVal.textContent = `Kalibriert (${state.calibration.steps} Schritte)`;
-                        statusVal.style.color = "#16a34a";
-                        break;
-                }
-            }
-            
-            if (calibBtn && calibLed) {
-                if (state.calibration.state === 1 || state.calibration.state === 2) {
-                    calibBtn.classList.add('active');
-                    calibLed.style.background = state.calibration.state === 1 ? "#d97706" : "#2563eb";
-                    calibLed.style.boxShadow = `0 0 6px ${state.calibration.state === 1 ? '#d97706' : '#2563eb'}`;
-                } else {
-                    calibBtn.classList.remove('active');
-                    calibLed.style.background = "#94a3b8";
-                    calibLed.style.boxShadow = "none";
-                }
-            }
         }
 
         // --- OVERVIEW: DRAW ROPEWAY & GONDOLAS ---
@@ -2818,24 +2587,23 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                     zone = zoneNames[zone] || 'AST';
                 }
 
-                // Live gondolas always have 0 progress as requested
                 let progress = g.progress;
-                if (!state.isSimulation) {
-                    progress = 0;
+                if (state.direction === 'backwards') {
+                    progress = 1.0 - progress;
                 }
 
                 if (zone === 'rightTrack') {
-                    x = 120 + (progress / 100) * (680 - 120);
+                    x = 120 + progress * (680 - 120);
                     y = 70;
                 } else if (zone === 'GST') {
-                    const theta = -Math.PI / 2 + (progress / 100) * Math.PI;
+                    const theta = -Math.PI / 2 + progress * Math.PI;
                     x = 680 + Math.cos(theta) * 50;
                     y = 120 + Math.sin(theta) * 50;
                 } else if (zone === 'leftTrack') {
-                    x = 680 - (progress / 100) * (680 - 120);
+                    x = 680 - progress * (680 - 120);
                     y = 170;
                 } else if (zone === 'AST') {
-                    const theta = Math.PI / 2 + (progress / 100) * Math.PI;
+                    const theta = Math.PI / 2 + progress * Math.PI;
                     x = 120 + Math.cos(theta) * 50;
                     y = 120 + Math.sin(theta) * 50;
                 }
@@ -2860,7 +2628,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 cabin.setAttribute('height', 15);
                 cabin.setAttribute('rx', '3');
                 
-                cabin.setAttribute('fill', g.isStopped ? 'var(--color-red)' : 'var(--leitner-light-blue)');
+                cabin.setAttribute('fill', g.isStopped ? 'var(--color-red)' : 'var(--brand-light-blue)');
                 cabin.setAttribute('stroke', '#ffffff');
                 cabin.setAttribute('stroke-width', '1');
                 gElem.appendChild(cabin);
@@ -2907,18 +2675,20 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 hmiClock.textContent = String(nowClock.getHours()).padStart(2, '0') + ':' + String(nowClock.getMinutes()).padStart(2, '0');
             }
 
-            // Handle speed physics (slow acceleration/deceleration)
-            if (state.nothalt || state.sibre) {
-                state.speed = Math.max(0, state.speed - dt * 8); 
-            } else {
-                const limit = getSpeedLimit();
-                const effectiveTargetSpeed = Math.min(state.targetSpeed, limit);
-                
-                const speedDiff = effectiveTargetSpeed - state.speed;
-                if (Math.abs(speedDiff) > 0.05) {
-                    state.speed += Math.sign(speedDiff) * dt * 1.2; 
+            // Handle speed physics for simulation mode only
+            if (state.isSimulation) {
+                if (state.nothalt || state.sibre) {
+                    state.speed = Math.max(0, state.speed - dt * 8); 
                 } else {
-                    state.speed = effectiveTargetSpeed;
+                    const limit = getSpeedLimit();
+                    const effectiveTargetSpeed = Math.min(state.targetSpeed, limit);
+                    
+                    const speedDiff = effectiveTargetSpeed - state.speed;
+                    if (Math.abs(speedDiff) > 0.05) {
+                        state.speed += Math.sign(speedDiff) * dt * 1.2; 
+                    } else {
+                        state.speed = effectiveTargetSpeed;
+                    }
                 }
             }
 
@@ -3024,67 +2794,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 }
             }
 
-            // Simulate Calibration state machine in simulation mode
-            if (state.calibration && state.isSimulation) {
-                if (state.calibration.state === 1) {
-                    const hasExit = state.gondolas.some(g => g.zone === 'rightTrack' && g.progress < 5);
-                    if (hasExit) {
-                        state.calibration.state = 2;
-                        state.calibration.startDist = state.distance;
-                    }
-                } else if (state.calibration.state === 2) {
-                    const currentDist = state.distance - state.calibration.startDist;
-                    state.calibration.steps = Math.round(currentDist * 300);
-                    
-                    const hasEntry = state.gondolas.some(g => g.zone === 'GST' && g.progress < 5);
-                    if (hasEntry) {
-                        state.calibration.state = 3;
-                        state.calibration.isCalibrated = true;
-                    }
-                }
-                updateCalibrationUI();
-            }
-
-            // Move Gondolas
-            const speedFactor = (state.speed / 8.0) * 8 * dt; 
-            const dirSign = state.direction === 'forward' ? 1 : -1;
             
-            // Reset sensor flags temporarily, will activate if a gondola is in the sensor trigger zones
-            state.sensors.astLeft = false;
-            state.sensors.astRight = false;
-            state.sensors.gstLeft = false;
-            state.sensors.gstRight = false;
 
-            state.gondolas.forEach(g => {
-                if (state.speed === 0) return;
-
-                let nextProgress = g.progress + speedFactor * dirSign * 10;
-                
-                if (nextProgress > 100) {
-                    nextProgress = nextProgress - 100;
-                    if (g.zone === 'rightTrack') g.zone = 'GST';
-                    else if (g.zone === 'GST') g.zone = 'leftTrack';
-                    else if (g.zone === 'leftTrack') g.zone = 'AST';
-                    else if (g.zone === 'AST') g.zone = 'rightTrack';
-                } else if (nextProgress < 0) {
-                    nextProgress = 100 + nextProgress;
-                    if (g.zone === 'rightTrack') g.zone = 'AST';
-                    else if (g.zone === 'AST') g.zone = 'leftTrack';
-                    else if (g.zone === 'leftTrack') g.zone = 'GST';
-                    else if (g.zone === 'GST') g.zone = 'rightTrack';
-                }
-                g.progress = nextProgress;
-
-                // Simulate Sensor triggers (AST left boundary X=120, GST right boundary X=680)
-                if (g.zone === 'rightTrack') {
-                    if (g.progress < 5) state.sensors.astRight = true; 
-                    if (g.progress > 95) state.sensors.gstRight = true; 
-                } else if (g.zone === 'leftTrack') {
-                    if (g.progress < 5) state.sensors.gstLeft = true; 
-                    if (g.progress > 95) state.sensors.astLeft = true; 
-                }
-            });
-
+            // Update UI visuals
             updateSensorLEDs();
             updateRopewayDrawing();
 
@@ -3093,7 +2805,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         // --- Start Up ---
         window.addEventListener('DOMContentLoaded', () => {
-            initPolling();
+            initApp();
             
             lastSimTime = Date.now();
             requestAnimationFrame(runSimulation);

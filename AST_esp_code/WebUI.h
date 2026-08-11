@@ -9,12 +9,12 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitner Seilbahn Steuerung</title>
+    <title>3S-Seilbahn Steuerung</title>
     <style>
         /* CSS Variables for design system */
         :root {
-            --leitner-blue: #0A3254;
-            --leitner-light-blue: #1A5282;
+            --brand-blue: #0A3254;
+            --brand-light-blue: #1A5282;
             --desk-bg: #dbe2e9;
             --desk-shadow: #98a2ad;
             --desk-highlight: #ffffff;
@@ -109,7 +109,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         .tab-btn.active {
-            background: var(--leitner-light-blue);
+            background: var(--brand-light-blue);
             color: #ffffff;
             box-shadow: 0 4px 10px rgba(26, 82, 130, 0.4);
         }
@@ -191,7 +191,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             }
         }
 
-        /* ==================== TAB 1: ÜBERSICHT (LEITNER HMI) ==================== */
+        /* ==================== TAB 1: ÜBERSICHT (3S HMI) ==================== */
         
         /* HMI Bezel (Outer Frame resembling physical monitor) */
         .hmi-bezel {
@@ -779,7 +779,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .hmi-footer-logo .logo-main {
             font-size: 0.95rem;
             font-weight: 900;
-            color: #1d4ed8; /* Leitner logo blue */
+            color: #1d4ed8; /* Brand logo blue */
             letter-spacing: 2px;
         }
 
@@ -835,14 +835,33 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         .hmi-modal-header {
-            background: #2b3846;
-            color: #ffffff;
-            padding: 8px 12px;
+            background: var(--brand-blue);
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             border-top-left-radius: 6px;
             border-top-right-radius: 6px;
+        }
+
+        .brand-logo {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+            color: #ffffff;
+        }
+
+        .brand-logo span {
+            font-size: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .hmi-modal-header h3 {
@@ -939,7 +958,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         /* Top Blue Accent Strip on Control Panel */
         .desk-header-strip {
-            background: var(--leitner-blue);
+            background: var(--brand-blue);
             height: 75px;
             border-radius: 16px;
             display: flex;
@@ -952,7 +971,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             border-bottom: 3px solid #04192b;
         }
 
-        .leitner-brand {
+        .brand-logo {
             color: #ffffff;
             font-family: Arial, sans-serif;
             font-size: 1.5rem;
@@ -962,7 +981,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
         }
 
-        .leitner-brand span {
+        .brand-logo span {
             font-size: 0.75rem;
             font-weight: bold;
             font-style: normal;
@@ -1424,7 +1443,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 height: 50px;
                 padding: 0 15px;
             }
-            .leitner-brand {
+            .brand-logo {
                 font-size: 1.1rem;
             }
             .control-row {
@@ -1621,8 +1640,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                             </button>
                         </div>
                         <div class="hmi-footer-logo">
-                            <span class="logo-main">LEITNER</span>
-                            <span class="logo-sub">ropeways</span>
+                            <span class="logo-main">3S ROPEWAY</span>
+                            <span class="logo-sub">control system</span>
                         </div>
                         <div class="hmi-footer-right">
                             <button class="hmi-power-btn" onclick="shutdownHmi()" title="System ausschalten">
@@ -1703,15 +1722,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             </div>
         </div>
 
-        <!-- ==================== TAB 2: STEUERUNG (LEITNER PANEL) ==================== -->
+        <!-- ==================== TAB 2: STEUERUNG (CONTROL PANEL) ==================== -->
         <div id="control" class="tab-content">
             <div class="desk-outer">
                 <div class="desk-inner">
                     <!-- Blue Header Strip -->
                     <div class="desk-header-strip">
-                        <div class="leitner-brand">
-                            LEITNER
-                            <span>ropeways</span>
+                        <div class="brand-logo">
+                            3S ROPEWAY
+                            <span>control system</span>
                         </div>
                         <div class="mic-mockup"></div>
                     </div>
@@ -2609,7 +2628,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 cabin.setAttribute('height', 15);
                 cabin.setAttribute('rx', '3');
                 
-                cabin.setAttribute('fill', g.isStopped ? 'var(--color-red)' : 'var(--leitner-light-blue)');
+                cabin.setAttribute('fill', g.isStopped ? 'var(--color-red)' : 'var(--brand-light-blue)');
                 cabin.setAttribute('stroke', '#ffffff');
                 cabin.setAttribute('stroke-width', '1');
                 gElem.appendChild(cabin);
