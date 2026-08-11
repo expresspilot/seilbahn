@@ -1,0 +1,2801 @@
+#ifndef WEBUI_H
+#define WEBUI_H
+
+#include <Arduino.h>
+
+const char INDEX_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitner Seilbahn Steuerung</title>
+    <style>
+        /* CSS Variables for design system */
+        :root {
+            --leitner-blue: #0A3254;
+            --leitner-light-blue: #1A5282;
+            --desk-bg: #dbe2e9;
+            --desk-shadow: #98a2ad;
+            --desk-highlight: #ffffff;
+            --plate-bg: #cad5df;
+            --button-collar: #0c437a;
+            --button-collar-border: #052445;
+            --color-yellow: #ffd500;
+            --color-red: #d51a1a;
+            --color-green: #00e640;
+            --color-blue: #0076a8;
+            --color-dark: #333d47;
+            --color-light-grey: #a6b5c3;
+            --led-glow-red: 0 0 15px rgba(213, 26, 26, 0.8);
+            --led-glow-green: 0 0 15px rgba(0, 230, 64, 0.8);
+            --led-glow-yellow: 0 0 15px rgba(255, 213, 0, 0.8);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: #121921;
+            color: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Header & Navigation */
+        header {
+            background: #19222c;
+            padding: 10px 20px;
+            border-bottom: 2px solid #23303d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .logo-text span {
+            color: #0076a8;
+        }
+
+        /* Tab Controls */
+        .tabs {
+            display: flex;
+            background: #0f151c;
+            border-radius: 30px;
+            padding: 4px;
+            border: 1px solid #23303d;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #a0aec0;
+            padding: 8px 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #ffffff;
+        }
+
+        .tab-btn.active {
+            background: var(--leitner-light-blue);
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(26, 82, 130, 0.4);
+        }
+
+        /* System Info Pill */
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f151c;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid #23303d;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--color-red);
+            box-shadow: 0 0 8px var(--color-red);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .status-dot.connected {
+            background: var(--color-green);
+            box-shadow: 0 0 8px var(--color-green);
+        }
+
+        .sim-mode-banner {
+            background: #e65100;
+            color: white;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 4px 0;
+            display: none;
+        }
+
+        /* Container Main content */
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .tab-content {
+            width: 100%;
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+                if (hmiConnBtn) hmiConnBtn.style.color = '#22c55e'; // grün
+                if (espNowStatusDot) espNowStatusDot.style.backgroundColor = '#22c55e';
+                if (espNowStatusText) espNowStatusText.textContent = 'GST verbunden';
+            }
+        }
+
+        /* ==================== TAB 1: ÜBERSICHT (LEITNER HMI) ==================== */
+        
+        /* HMI Bezel (Outer Frame resembling physical monitor) */
+        .hmi-bezel {
+            width: 100%;
+            max-width: 1050px;
+            margin: 0 auto;
+            background: #1e293b; /* Dark charcoal/slate bezel */
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255,255,255,0.1),
+                inset 0 -2px 4px rgba(0,0,0,0.5);
+            border: 4px solid #0f172a;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .hmi-bezel::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 16px;
+            pointer-events: none;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* The active screen itself */
+        .hmi-screen {
+            width: 100%;
+            background: #eaeff4; /* Warm SCADA background */
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+            border: 3px solid #000;
+            position: relative;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #334155;
+            box-sizing: border-box;
+        }
+
+        /* HMI Top Header Bar */
+        .hmi-header {
+            background: #2b3846; /* Slate gray HMI header */
+            height: 42px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 2px solid #1e293b;
+            user-select: none;
+        }
+
+        .hmi-header-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .hmi-icon-btn {
+            background: #475569;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.15s;
+        }
+
+        .hmi-icon-btn:hover {
+            background: #64748b;
+            color: #fff;
+        }
+
+        .hmi-header-center {
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .hmi-header-right {
+            color: #cbd5e1;
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        /* HMI Status & Speedometer Bar */
+        .hmi-status-bar {
+            background: #ffffff;
+            height: 85px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 2px solid #cbd5e1;
+            position: relative;
+        }
+
+        .hmi-status-left, .hmi-status-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .hmi-status-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #eaeff4;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .hmi-status-icon:hover {
+            background: #cbd5e1;
+            color: #1e293b;
+        }
+
+        .hmi-status-icon.warning {
+            color: #ef4444;
+        }
+
+        .hmi-status-icon.power-tower {
+            color: #22c55e;
+        }
+
+        /* Central Speedometer Capsule Bubble */
+        .hmi-speedo-container {
+            background: #2b3846; /* Dark gray capsule */
+            height: 65px;
+            border-radius: 35px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 25px;
+            color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            border: 2px solid #475569;
+            z-index: 10;
+            position: relative;
+        }
+
+        .hmi-brake-indicators {
+            display: flex;
+            gap: 8px;
+        }
+
+        .hmi-brake-led {
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 3px 6px;
+            border-radius: 10px;
+            border: 2px solid currentColor;
+            line-height: 1;
+            text-align: center;
+            min-width: 18px;
+        }
+
+        .hmi-brake-led.green {
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .hmi-brake-led.red {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            animation: hmi-blink-red 1s infinite alternate;
+        }
+
+        @keyframes hmi-blink-red {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+        }
+
+        .hmi-distance-counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: monospace;
+            font-size: 1.05rem;
+            color: #cbd5e1;
+        }
+
+        /* Circular Speedometer Ring Gauge */
+        .hmi-circular-gauge {
+            position: relative;
+            width: 82px;
+            height: 82px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 3px solid #2b3846;
+            margin-top: -6px; /* Pops out of the capsule bar slightly */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gauge-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: #334155;
+            stroke-width: 8;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke: #3b82f6; /* Blue progress indicator */
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .gauge-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+            line-height: 1.1;
+        }
+
+        .gauge-target {
+            font-size: 0.55rem;
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        .gauge-current {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #ffffff;
+            font-family: monospace;
+        }
+
+        .gauge-percent {
+            font-size: 0.58rem;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        /* HMI Content Frame & Views */
+        .hmi-content {
+            flex-grow: 1;
+            padding: 16px;
+            position: relative;
+            min-height: 380px;
+            box-sizing: border-box;
+        }
+
+        .hmi-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            animation: hmiFadeIn 0.25s ease-out;
+        }
+
+        .hmi-view.active {
+            display: block;
+        }
+
+        @keyframes hmiFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* HMI Operations Mode View */
+        .hmi-operations-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .hmi-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .hmi-card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+
+        .hmi-card-subtitle {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .hmi-btn-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* HMI Custom SCADA Toggle Buttons */
+        .hmi-toggle-btn {
+            background: #eaeff4;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.15s;
+            position: relative;
+            outline: none;
+        }
+
+        .hmi-toggle-btn:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        .hmi-btn-led {
+            width: 18px;
+            height: 8px;
+            border-radius: 4px;
+            background: #94a3b8; /* inactive gray */
+            border: 1px solid #475569;
+            transition: all 0.15s;
+        }
+
+        /* Active toggle states */
+        .hmi-toggle-btn.active {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .hmi-toggle-btn.active .hmi-btn-led {
+            background: #3b82f6; /* active blue */
+            box-shadow: 0 0 6px #3b82f6;
+        }
+
+        .hmi-toggle-btn.active .hmi-btn-led.blue {
+            background: #2563eb;
+            box-shadow: 0 0 6px #2563eb;
+        }
+
+        .hmi-toggle-btn.active .hmi-btn-led:not(.blue) {
+            background: #22c55e; /* active green */
+            box-shadow: 0 0 6px #22c55e;
+        }
+
+        /* Warning toggles (like passenger mode deactivated) */
+        .hmi-toggle-btn.warning {
+            background: #fffbeb;
+            border-color: #f59e0b;
+        }
+
+        .hmi-toggle-btn.warning .hmi-btn-led {
+            background: #f59e0b; /* active orange */
+            box-shadow: 0 0 6px #f59e0b;
+        }
+
+        /* Bahnhof 12 Split layout */
+        .hmi-bahnhof-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            flex-grow: 1;
+        }
+
+        .hmi-bahnhof-modes {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Checklist section */
+        .hmi-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .hmi-check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .hmi-check-item.border-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 8px;
+            background: #f8fafc;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .hmi-check-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #94a3b8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.65rem;
+        }
+
+        .hmi-check-icon.checked {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #15803d;
+        }
+
+        .hmi-check-sub {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .hmi-subcheck-check {
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        /* Manual control arrows */
+        .hmi-manual-controls {
+            margin-top: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .hmi-control-box {
+            flex: 1;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 6px;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .hmi-box-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #64748b;
+        }
+
+        .hmi-arrows {
+            display: flex;
+            width: 100%;
+            gap: 4px;
+        }
+
+        .arrow-btn {
+            flex: 1;
+            background: #eaeff4;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            color: #475569;
+            font-weight: bold;
+            padding: 4px 0;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.1s;
+        }
+
+        .arrow-btn:active {
+            background: #3b82f6;
+            color: #fff;
+            border-color: #2563eb;
+        }
+
+        /* HMI Schematic/Track view */
+        .hmi-track-canvas-container {
+            width: 100%;
+            height: 100%;
+            background: #eaeff4;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hmi-track-svg {
+            width: 100%;
+            height: 100%;
+            max-height: 360px;
+        }
+
+        .hmi-tower-rollers circle {
+            transition: fill 0.2s;
+        }
+
+        /* HMI Footer Bar */
+        .hmi-footer {
+            background: #eaeff4;
+            height: 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            border-top: 2px solid #cbd5e1;
+            user-select: none;
+        }
+
+        .hmi-footer-left {
+            display: flex;
+            gap: 10px;
+        }
+
+        .hmi-footer-btn {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            width: 34px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #475569;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.15s;
+        }
+
+        .hmi-footer-btn:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .hmi-footer-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .hmi-footer-logo .logo-main {
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #1d4ed8; /* Leitner logo blue */
+            letter-spacing: 2px;
+        }
+
+        .hmi-footer-logo .logo-sub {
+            font-size: 0.5rem;
+            font-weight: bold;
+            color: #475569;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hmi-power-btn {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #ef4444;
+            width: 34px;
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.15s;
+        }
+
+        .hmi-power-btn:hover {
+            background: #fecaca;
+            color: #dc2626;
+        }
+
+        /* HMI Modal Popup Overlays (contained inside HMI bezel) */
+        .hmi-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            background: #ffffff;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 50;
+            animation: hmiModalFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes hmiModalFade {
+            from { opacity: 0; transform: translate(-50%, -45%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .hmi-modal-header {
+            background: #2b3846;
+            color: #ffffff;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+
+        .hmi-modal-header h3 {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hmi-modal-close {
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            font-size: 1.3rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .hmi-modal-close:hover {
+            color: #ffffff;
+        }
+
+        .hmi-modal-body {
+            padding: 16px;
+        }
+
+        .hmi-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #cbd5e1;
+            font-size: 0.85rem;
+        }
+
+        .hmi-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .info-val {
+            font-weight: bold;
+            color: #334155;
+            font-family: monospace;
+        }
+
+        .hmi-settings-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hmi-settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        /* ==================== TAB 2: STEUERUNG (PULT) ==================== */
+        .desk-outer {
+            width: 100%;
+            max-width: 1050px;
+            background: linear-gradient(135deg, var(--desk-bg) 0%, #bdcbd6 100%);
+            border-radius: 36px;
+            padding: 24px;
+            box-shadow: 
+                inset 2px 2px 5px var(--desk-highlight),
+                inset -3px -3px 8px var(--desk-shadow),
+                0 15px 40px rgba(0,0,0,0.5),
+                0 30px 80px rgba(0,0,0,0.3);
+            border: 1px solid #b2c0cc;
+            position: relative;
+        }
+
+        .desk-inner {
+            background: linear-gradient(180deg, #c5d2dc 0%, #b3c2cd 100%);
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 
+                inset -2px -2px 5px var(--desk-highlight),
+                inset 3px 3px 8px var(--desk-shadow),
+                0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #aebac5;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Top Blue Accent Strip on Control Panel */
+        .desk-header-strip {
+            background: var(--leitner-blue);
+            height: 75px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.2),
+                0 4px 10px rgba(0,0,0,0.15);
+            border-bottom: 3px solid #04192b;
+        }
+
+        .leitner-brand {
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: -1px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+        }
+
+        .leitner-brand span {
+            font-size: 0.75rem;
+            font-weight: bold;
+            font-style: normal;
+            letter-spacing: 2px;
+            display: block;
+            margin-top: -4px;
+            text-align: right;
+        }
+
+        .mic-mockup {
+            width: 28px;
+            height: 28px;
+            background: #505d6b;
+            border-radius: 50%;
+            box-shadow: inset 1px 1px 3px rgba(255,255,255,0.3), 3px 3px 6px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .mic-mockup::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 25px;
+            background: #2f3640;
+            bottom: -22px;
+            left: 11px;
+            border-radius: 3px;
+        }
+
+        /* Layout Grid for Buttons */
+        .control-grid {
+            display: grid;
+            grid-template-rows: auto auto;
+            gap: 30px;
+            padding: 10px 5px;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            min-height: 180px;
+        }
+
+        /* Centered styling for the top row buttons */
+        .control-row.row-upper {
+            justify-content: center;
+            gap: 100px;
+        }
+
+        /* Grey Tracks for Grouped Controls */
+        .group-track-1 {
+            background: rgba(144, 164, 180, 0.4);
+            border-radius: 60px;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            box-shadow: 
+                inset 2px 2px 5px rgba(0,0,0,0.15),
+                inset -2px -2px 5px rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .group-track-2 {
+            background: rgba(144, 164, 180, 0.4);
+            border-radius: 60px;
+            padding: 10px 30px 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 35px;
+            box-shadow: 
+                inset 2px 2px 5px rgba(0,0,0,0.15),
+                inset -2px -2px 5px rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* ==================== BUTTONS AND SWITCHES STYLE ==================== */
+
+        /* Container for each control widget */
+        .control-widget {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .control-label {
+            color: #3e4c5a;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.4);
+        }
+
+        /* Blue collar base structure for most standard buttons */
+        .collar {
+            width: 78px;
+            height: 78px;
+            background: radial-gradient(circle, #255d8f 0%, var(--button-collar) 70%, #031c36 100%);
+            border-radius: 50%;
+            border: 3px solid var(--button-collar-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                inset 1px 1px 2px rgba(255,255,255,0.3),
+                1px 3px 6px rgba(0,0,0,0.3),
+                3px 6px 15px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        /* 3D push-button base style */
+        .push-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                0 3px 0 rgba(0,0,0,0.4),
+                inset -2px -2px 5px rgba(0,0,0,0.3),
+                inset 2px 2px 5px rgba(255,255,255,0.5),
+                0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .push-btn:active, .push-btn.active {
+            transform: translateY(2px);
+            box-shadow: 
+                0 1px 0 rgba(0,0,0,0.2),
+                inset -1px -1px 3px rgba(0,0,0,0.2),
+                inset 1px 1px 4px rgba(0,0,0,0.4),
+                0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Specific Push-button Colors */
+        /* Yellow Button (Alarm) */
+        .btn-yellow {
+            background: radial-gradient(circle, #fff3a3 0%, var(--color-yellow) 70%, #cca300 100%);
+            border: 2px solid #cca300;
+        }
+        .btn-yellow.active {
+            background: #fff3a3;
+            box-shadow: 0 0 20px #ffe57f, inset 0 0 10px rgba(255, 213, 0, 0.6);
+        }
+
+        /* Blue Button (Anwurf) */
+        .btn-blue {
+            background: radial-gradient(circle, #8bc9e6 0%, var(--color-blue) 70%, #004d70 100%);
+            border: 2px solid #00567a;
+        }
+        .btn-blue.active {
+            background: #8bc9e6;
+            box-shadow: 0 0 20px #8bc9e6, inset 0 0 10px rgba(0, 118, 168, 0.6);
+        }
+
+        /* Green Button (Fertig / Abfahrt) */
+        .btn-green {
+            background: radial-gradient(circle, #b2ffc8 0%, var(--color-green) 70%, #00a62c 100%);
+            border: 2px solid #009928;
+        }
+        .btn-green.active {
+            background: #73ff9c;
+            box-shadow: 0 0 22px #4dff82, inset 0 0 12px rgba(0, 230, 64, 0.8);
+        }
+
+        /* Dark Grey Button (Fahrtaufforderung) */
+        .btn-dark {
+            background: radial-gradient(circle, #7e8b98 0%, var(--color-dark) 70%, #171d22 100%);
+            border: 2px solid #283038;
+        }
+        .btn-dark.active {
+            background: #8e9ca8;
+            box-shadow: 0 0 12px rgba(142, 156, 168, 0.5);
+        }
+
+        /* ==================== MUSHROOM / NOTHALT BUTTONS ==================== */
+        .collar-yellow {
+            width: 104px;
+            height: 104px;
+            background: radial-gradient(circle, #ffeb3b 0%, #e0c800 70%, #9e8a00 100%);
+            border-radius: 50%;
+            border: 4px solid #857400;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                inset 1px 2px 2px rgba(255,255,255,0.4),
+                1px 4px 6px rgba(0,0,0,0.3),
+                3px 8px 18px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .nothalt-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 3px solid #8c0000;
+            background: radial-gradient(circle, #ff6b6b 0%, var(--color-red) 65%, #8c0000 100%);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            box-shadow: 
+                0 8px 0 #730000,
+                inset -3px -3px 8px rgba(0,0,0,0.5),
+                inset 3px 3px 8px rgba(255,255,255,0.4),
+                0 8px 15px rgba(0,0,0,0.4);
+        }
+
+        .nothalt-btn:active, .nothalt-btn.latched {
+            transform: translateY(6px);
+            box-shadow: 
+                0 2px 0 #730000,
+                inset -2px -2px 6px rgba(0,0,0,0.4),
+                inset 2px 2px 6px rgba(255,255,255,0.3),
+                0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .nothalt-btn.latched {
+            animation: pulse-red-border 1.5s infinite;
+        }
+
+        @keyframes pulse-red-border {
+            0% { box-shadow: 0 2px 0 #730000, 0 0 10px rgba(213,26,26,0.3); }
+            50% { box-shadow: 0 2px 0 #730000, 0 0 25px rgba(213,26,26,0.9); }
+            100% { box-shadow: 0 2px 0 #730000, 0 0 10px rgba(213,26,26,0.3); }
+        }
+
+        /* Sicherheitsbremse mushroom button (slightly smaller than Nothalt) */
+        .sibre-btn {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            border: 3px solid #8c0000;
+            background: radial-gradient(circle, #ff6b6b 0%, var(--color-red) 65%, #8c0000 100%);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            box-shadow: 
+                0 6px 0 #730000,
+                inset -2px -2px 6px rgba(0,0,0,0.5),
+                inset 2px 2px 6px rgba(255,255,255,0.4),
+                0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .sibre-btn:active, .sibre-btn.latched {
+            transform: translateY(4px);
+            box-shadow: 
+                0 2px 0 #730000,
+                inset -2px -2px 4px rgba(0,0,0,0.4),
+                inset 2px 2px 4px rgba(255,255,255,0.3),
+                0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* ==================== ROTARY SELECTOR SWITCHES ==================== */
+        .rotary-knob-base {
+            width: 74px;
+            height: 74px;
+            background: radial-gradient(circle, #22303c 0%, #0e141a 75%, #05070a 100%);
+            border-radius: 50%;
+            border: 3px solid #334250;
+            box-shadow: 
+                inset 1px 1px 3px rgba(255,255,255,0.1),
+                1px 3px 6px rgba(0,0,0,0.4),
+                0 0 10px rgba(0,0,0,0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .knob-handle {
+            width: 14px;
+            height: 52px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            position: absolute;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1.2);
+            box-shadow: 
+                3px 3px 5px rgba(0,0,0,0.5),
+                inset 1px 1px 2px rgba(255,255,255,0.8),
+                inset -1px -1px 2px rgba(0,0,0,0.4);
+        }
+
+        /* White indicator line on the knob handle */
+        .knob-handle::before {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 20px;
+            background: #2563eb;
+            top: 4px;
+            left: 5px;
+            border-radius: 2px;
+        }
+
+        /* Markings around rotary knobs */
+        .ticks-container {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            top: -23px;
+            left: -23px;
+        }
+
+        .tick-label {
+            position: absolute;
+            font-size: 0.52rem;
+            color: #4a5568;
+            font-weight: 800;
+            text-transform: uppercase;
+            width: 60px;
+            text-align: center;
+            white-space: nowrap;
+            pointer-events: auto; /* Allow direct clicking of text labels */
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .tick-label:hover {
+            color: #2563eb;
+            text-shadow: 0 0 3px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Position Tick Labels (Direction: Forward, Backwards) - Horizontal (No rotation) */
+        .widget-direction .tick-label.tick-left { top: 30px; left: -36px; width: 55px; text-align: right; }
+        .widget-direction .tick-label.tick-right { top: 30px; left: 98px; width: 70px; text-align: left; }
+
+        /* Position Tick Labels (Slow/Langsam switch) - Horizontal (No rotation, L1 and L2) */
+        .widget-slow .tick-label.tick-left { top: 30px; left: -32px; width: 50px; text-align: right; }
+        .widget-slow .tick-label.tick-top { top: 9px; left: 25px; width: 70px; text-align: center; }
+        .widget-slow .tick-label.tick-right { top: 30px; left: 98px; width: 50px; text-align: left; }
+
+        /* Shift the titles of rotary widgets up slightly to avoid collision with ticks */
+        .widget-slow .control-label, .widget-direction .control-label {
+            transform: translateY(-8px);
+        }
+
+        /* ==================== SPEED POTENTIOMETER ==================== */
+        .poti-collar {
+            width: 106px;
+            height: 106px;
+            background: radial-gradient(circle, #255d8f 0%, var(--button-collar) 70%, #031c36 100%);
+            border-radius: 50%;
+            border: 4px solid var(--button-collar-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                inset 1px 1px 3px rgba(255,255,255,0.4),
+                1px 4px 6px rgba(0,0,0,0.3),
+                3px 8px 18px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .poti-knob {
+            width: 78px;
+            height: 78px;
+            background: radial-gradient(circle, #2d3748 0%, #1a202c 70%, #0d1117 100%);
+            border-radius: 50%;
+            border: 3px solid #1a202c;
+            box-shadow: 
+                0 4px 6px rgba(0,0,0,0.5),
+                inset 1px 1px 3px rgba(255,255,255,0.2),
+                inset -2px -2px 6px rgba(0,0,0,0.5);
+            position: relative;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .poti-knob:active {
+            cursor: grabbing;
+        }
+
+        .poti-indicator {
+            width: 8px;
+            height: 28px;
+            background: #ffffff;
+            border-radius: 4px;
+            position: absolute;
+            top: 6px;
+            left: calc(50% - 4px);
+            transform-origin: 4px 33px;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+        }
+
+        .poti-indicator::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--color-blue);
+            top: 4px;
+            left: 2px;
+        }
+
+        .poti-display {
+            position: absolute;
+            background: #000000;
+            color: var(--color-green);
+            font-family: monospace;
+            font-size: 0.8rem;
+            padding: 3px 2px;
+            border-radius: 4px;
+            border: 1px solid #333d47;
+            bottom: -32px;
+            text-align: center;
+            width: 80px;
+            box-shadow: inset 0 0 5px rgba(0,255,0,0.2);
+        }
+
+        /* Yellow indicator glow screen alert */
+        .emergency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(213, 26, 26, 0.15);
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s;
+            animation: pulse-overlay 2s infinite alternate;
+            display: none;
+        }
+
+        @keyframes pulse-overlay {
+            0% { opacity: 0.2; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Responsive UI fixes */
+        @media (max-width: 768px) {
+            .desk-outer {
+                padding: 12px;
+                border-radius: 20px;
+            }
+            .desk-inner {
+                padding: 10px;
+                border-radius: 16px;
+            }
+            .desk-header-strip {
+                height: 50px;
+                padding: 0 15px;
+            }
+            .leitner-brand {
+                font-size: 1.1rem;
+            }
+            .control-row {
+                gap: 15px;
+            }
+            .control-row.row-upper {
+                gap: 30px;
+            }
+            .group-track-1, .group-track-2 {
+                gap: 15px;
+                padding: 10px 15px;
+            }
+            .collar, .rotary-knob-base {
+                width: 68px;
+                height: 68px;
+            }
+            .push-btn {
+                width: 44px;
+                height: 44px;
+            }
+            .collar-yellow {
+                width: 88px;
+                height: 88px;
+            }
+            .nothalt-btn {
+                width: 60px;
+                height: 60px;
+            }
+            .sibre-btn {
+                width: 48px;
+                height: 48px;
+            }
+            .poti-collar {
+                width: 90px;
+                height: 90px;
+            }
+            .poti-knob {
+                width: 64px;
+                height: 64px;
+            }
+            .poti-indicator {
+                height: 22px;
+                transform-origin: 4px 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sim-mode-banner" id="simBanner">SIMULATIONSAKTIV – Keine Verbindung zum ESP32. Lokale Simulation läuft.</div>
+    <div class="emergency-overlay" id="emergencyOverlay"></div>
+
+    <header>
+        <div class="logo-area">
+            <div class="logo-text">3S<span>SEILBAHN</span></div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('overview')">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1-.5-.5v-4A.5.5 0 0 1 8 4z"/>
+                </svg>
+                Übersicht
+            </button>
+            <button class="tab-btn" onclick="switchTab('control')">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
+                    <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H4z"/>
+                </svg>
+                Steuerung
+            </button>
+        </div>
+
+        <div class="system-status">
+            <div class="status-pill" id="espNowStatusPill" style="margin-right: 10px;">
+                <div class="status-dot" id="espNowStatusDot" style="background-color: #ef4444;"></div>
+                <span id="espNowStatusText">GST getrennt</span>
+            </div>
+            <div class="status-pill">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Verbinde...</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ==================== TAB 1: ÜBERSICHT ==================== -->
+        <div id="overview" class="tab-content active">
+            <div class="hmi-bezel">
+                <div class="hmi-screen">
+                    <!-- HMI Top Header -->
+                    <div class="hmi-header">
+                        <div class="hmi-header-center">Seilbahn Modellbau 3S</div>
+                        <div class="hmi-header-right">
+                            <span id="hmiClock">09:23</span>
+                        </div>
+                    </div>
+
+                    <!-- HMI Status / Speedometer Bar -->
+                    <div class="hmi-status-bar">
+                        <!-- Left Icons -->
+                        <div class="hmi-status-left">
+                            <div class="hmi-status-icon" id="hmiConnBtn" title="Verbindung GST" style="color: #22c55e;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
+                            <div class="hmi-status-icon power-tower" title="Strecke"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M4 22L12 2L20 22M12 2V22M8 12H16M6 17H18"></path></svg></div>
+                        </div>
+
+                        <!-- Central Speedometer Dial and indicators -->
+                        <div class="hmi-speedo-container">
+                            <div class="hmi-brake-indicators">
+                                <span class="hmi-brake-led green" id="hmiLedBB" title="Betriebsbremse (BB)">BB</span>
+                                <span class="hmi-brake-led green" id="hmiLedSB" title="Sicherheitsbremse (SB)">SB</span>
+                            </div>
+                            <!-- Circular speedometer -->
+                            <div class="hmi-circular-gauge">
+                                <svg viewBox="0 0 100 100" class="gauge-svg">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="42"></circle>
+                                    <circle class="gauge-fill" id="hmiGaugeFill" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="264"></circle>
+                                </svg>
+                                <div class="gauge-text">
+                                    <span class="gauge-target" id="hmiTargetSpeedVal">0 m/s</span>
+                                    <span class="gauge-current" id="hmiCurrentSpeedVal">0 m/s</span>
+                                    <span class="gauge-percent" id="hmiLoadVal">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Icons -->
+                        <div class="hmi-status-right">
+                            <div class="hmi-status-icon stats" id="hmiSettingsBtn" onclick="toggleHmiSettings()" title="Einstellungen (LED)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                        </div>
+                    </div>
+
+                    <!-- HMI Main Canvas (Interactive Screens) -->
+                    <div class="hmi-content">
+
+                        <!-- VIEW 2: SCHEMATIC/TRACK VIEW -->
+                        <div class="hmi-view active" id="hmiViewTrack">
+                            <div class="hmi-track-canvas-container">
+                                <svg class="hmi-track-svg" viewBox="0 0 800 360" id="hmiTrackSvg">
+                                    <!-- Definitions for gradients and elements -->
+                                    <defs>
+                                        <linearGradient id="hmiWheelGrad" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0%" stop-color="#fef08a" />
+                                            <stop offset="100%" stop-color="#ca8a04" />
+                                        </linearGradient>
+                                        <linearGradient id="hmiTrackGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="#cbd5e1" />
+                                            <stop offset="100%" stop-color="#94a3b8" />
+                                        </linearGradient>
+                                    </defs>
+                                    
+                                    <!-- Station 11 Text and indicators -->
+                                    <text x="60" y="52" fill="#3b82f6" font-size="20" font-weight="bold">AST</text>
+                                    
+                                    <!-- Station 12 Text and indicators -->
+                                    <text x="730" y="52" fill="#3b82f6" font-size="20" font-weight="bold">GST</text>
+
+                                    <!-- The main oval stadium rope track -->
+                                    <path d="M 120 70 A 50 50 0 0 0 120 170 L 680 170 A 50 50 0 0 0 680 70 Z" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+                                
+
+                                    <!-- Spinning yellow bullwheels -->
+                                    <g id="hmiWheelAST" transform="translate(120, 120)">
+                                        <circle cx="0" cy="0" r="40" fill="url(#hmiWheelGrad)" stroke="#854d0e" stroke-width="3" />
+                                        <circle cx="0" cy="0" r="8" fill="#475569" />
+                                        <!-- Wheel spokes -->
+                                        <line x1="-36" y1="0" x2="36" y2="0" stroke="#854d0e" stroke-width="4" />
+                                        <line x1="0" y1="-36" x2="0" y2="36" stroke="#854d0e" stroke-width="4" />
+                                    </g>
+                                    <g id="hmiWheelGST" transform="translate(680, 120)">
+                                        <circle cx="0" cy="0" r="40" fill="url(#hmiWheelGrad)" stroke="#854d0e" stroke-width="3" />
+                                        <circle cx="0" cy="0" r="8" fill="#475569" />
+                                        <!-- Wheel spokes -->
+                                        <line x1="-36" y1="0" x2="36" y2="0" stroke="#854d0e" stroke-width="4" />
+                                        <line x1="0" y1="-36" x2="0" y2="36" stroke="#854d0e" stroke-width="4" />
+                                    </g>
+
+                                    <g transform="translate(240, 120)">
+                                        <line x1="0" y1="-50" x2="0" y2="50" stroke="#64748b" stroke-width="2" />
+                                        <circle cx="0" cy="0" r="8" fill="#22c55e" stroke="#fff" stroke-width="2" id="hmiTower3" />
+                                    </g>
+
+                                    <g id="hmiGondolaGroup"></g>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HMI Bottom Bar -->
+                    <div class="hmi-footer">
+                        <div class="hmi-footer-left">
+                            <button class="hmi-footer-btn" onclick="toggleHmiView()" title="Ansicht umschalten">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+                            </button>
+                        </div>
+                        <div class="hmi-footer-logo">
+                            <span class="logo-main">LEITNER</span>
+                            <span class="logo-sub">ropeways</span>
+                        </div>
+                        <div class="hmi-footer-right">
+                            <button class="hmi-power-btn" onclick="shutdownHmi()" title="System ausschalten">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- SYSTEM INFORMATION POPUP MODAL (ⓘ) -->
+                    <div class="hmi-modal" id="hmiInfoModal" style="display: none;">
+                        <div class="hmi-modal-header">
+                            <h3>Systeminformationen</h3>
+                            <button class="hmi-modal-close" onclick="toggleHmiInfo()">&times;</button>
+                        </div>
+                        <div class="hmi-modal-body">
+                            <div class="hmi-info-row">
+                                <span class="info-label">Verbindungsstatus:</span>
+                                <span class="info-val" id="hmiInfoConn">Verbinde...</span>
+                            </div>
+                            <div class="hmi-info-row">
+                                <span class="info-label">Signalstärke (RSSI):</span>
+                                <span class="info-val" id="hmiInfoRssi">- dBm</span>
+                            </div>
+                            <div class="hmi-info-row">
+                                <span class="info-label">Uptime:</span>
+                                <span class="info-val" id="hmiInfoUptime">00:00:00</span>
+                            </div>
+                            <div class="hmi-info-row">
+                                <span class="info-label">ESP-NOW Peers:</span>
+                                <span class="info-val" id="hmiInfoPeers">1 Peer (GST)</span>
+                            </div>
+                            <div class="hmi-info-row">
+                                <span class="info-label">Betriebsmodus:</span>
+                                <span class="info-val" id="hmiInfoSim">Simulationsmodus</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SETTINGS POPUP MODAL (⚙) -->
+                    <div class="hmi-modal" id="hmiSettingsModal" style="display: none;">
+                        <div class="hmi-modal-header">
+                            <h3>Gondel Einstellungen</h3>
+                            <button class="hmi-modal-close" onclick="toggleHmiSettings()">&times;</button>
+                        </div>
+                        <div class="hmi-modal-body">
+                            <div class="hmi-settings-section" style="display: flex; flex-direction: column; gap: 12px; padding: 10px 0;">
+                                <div class="hmi-settings-row" style="justify-content: space-between; margin-bottom: 5px;">
+                                    <span class="info-label" style="font-weight: bold; color: #475569; font-size: 0.95rem;">Anzahl Gondeln:</span>
+                                    <input type="number" id="hmiGondolaCount" value="3" min="1" max="50" style="width: 60px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; text-align: center; outline: none;" onchange="setGondolaCount(this.value)">
+                                </div>
+                                <div class="hmi-settings-row" style="justify-content: space-between; margin-bottom: 5px;">
+                                    <span class="info-label" style="font-weight: bold; color: #475569; font-size: 0.95rem;">Streckenlänge (Steps):</span>
+                                    <input type="number" id="hmiTrackLength" value="400000" min="1000" max="10000000" step="1000" style="width: 100px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; text-align: center; color: #0f172a; outline: none; font-size: 0.95rem;" onchange="setTrackLength(this.value)">
+                                </div>
+                                <div class="hmi-settings-row" style="justify-content: space-between; margin-bottom: 5px;">
+                                    <span class="info-label" style="font-weight: bold; color: #475569; font-size: 0.95rem;">Abstand (Seil-Schritte):</span>
+                                    <input type="number" id="hmiGondolaDistance" value="10000" min="1000" max="100000" step="100" style="width: 80px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; text-align: center; color: #0f172a; outline: none; font-size: 0.95rem;" onchange="setGondolaDistance(this.value)">
+                                </div>
+                                <hr style="border: 0; border-top: 1px solid #e2e8f0;">
+                                <div style="font-size: 0.9rem; font-weight: bold; color: #475569; margin-bottom: 4px;">Strecke Messen</div>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button class="hmi-control-btn" style="flex: 1;" onclick="startMeasurement()">Messung Starten</button>
+                                    <button class="hmi-control-btn" style="flex: 1; background: #64748b;" onclick="stopMeasurement()">Stopp</button>
+                                </div>
+                                <div style="font-size: 0.85rem; color: #64748b; text-align: center; font-family: monospace;">
+                                    Gemessene Steps: <span id="hmiMeasureVal" style="font-weight: bold; color: #0f172a;">0</span>
+                                </div>
+                                <hr style="border: 0; border-top: 1px solid #e2e8f0;">
+                                <div style="font-size: 0.9rem; font-weight: bold; color: #475569; margin-bottom: 4px;">GST Debug (Abstand)</div>
+                                <div style="font-size: 0.85rem; color: #64748b; font-family: monospace; display: flex; flex-direction: column; gap: 4px;">
+                                    <div>Holding Gondola: <span id="gstDebugHolding" style="font-weight: bold; color: #0f172a;">-</span></div>
+                                    <div>Rope Steps: <span id="gstDebugSteps" style="font-weight: bold; color: #0f172a;">-</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: STEUERUNG (LEITNER PANEL) ==================== -->
+        <div id="control" class="tab-content">
+            <div class="desk-outer">
+                <div class="desk-inner">
+                    <!-- Blue Header Strip -->
+                    <div class="desk-header-strip">
+                        <div class="leitner-brand">
+                            LEITNER
+                            <span>ropeways</span>
+                        </div>
+                        <div class="mic-mockup"></div>
+                    </div>
+
+                    <!-- Panel Layout Grid -->
+                    <div class="control-grid">
+                        <!-- UPPER ROW (Centered Buttons) -->
+                        <div class="control-row row-upper">
+
+                            <!-- GROUP TRACK: HALT / NOTHALT / SICHERHEITSBREMSE -->
+                            <div class="group-track-1">
+                                <!-- HALT -->
+                                <div class="control-widget">
+                                    <span class="control-label">Halt</span>
+                                    <button class="push-btn btn-yellow" id="btnHalt" style="border: 2px solid #b29300;" onclick="triggerHalt()"></button>
+                                </div>
+
+                                <!-- NOTHALT (Latching Mushroom) -->
+                                <div class="control-widget" style="gap: 5px;">
+                                    <span class="control-label">Nothalt</span>
+                                    <div class="collar-yellow">
+                                        <button class="nothalt-btn" id="btnNothalt" onclick="toggleNothalt()"></button>
+                                    </div>
+                                </div>
+
+                                <!-- SICHERHEITSBREMSE (Latching Mushroom) -->
+                                <div class="control-widget" style="gap: 12px;">
+                                    <span class="control-label">Sicherheitsbremse</span>
+                                    <div class="collar-yellow" style="width: 88px; height: 88px; border-width: 3px;">
+                                        <button class="sibre-btn" id="btnSibre" onclick="toggleSibre()"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LOWER ROW -->
+                        <div class="control-row">
+                            <!-- DIRECTION -->
+                            <div class="control-widget widget-direction">
+                                <span class="control-label">Direction</span>
+                                <div class="rotary-knob-base" id="knobDirection" onclick="clickKnob(event, 'direction')">
+                                    <div class="ticks-container">
+                                        <div class="tick-label tick-left" onclick="selectDirection(event, 'forward')">Forward</div>
+                                        <div class="tick-label tick-right" onclick="selectDirection(event, 'backwards')">Backwards</div>
+                                    </div>
+                                    <div class="knob-handle" id="handleDirection" style="transform: rotate(-35deg);"></div>
+                                </div>
+                            </div>
+
+                            <!-- ANWURF -->
+                            <div class="control-widget">
+                                <span class="control-label">Anwurf</span>
+                                <div class="collar">
+                                    <button class="push-btn btn-blue" id="btnAnwurf" onmousedown="pressButton('anwurf', true)" onmouseup="pressButton('anwurf', false)" onmouseleave="pressButton('anwurf', false)"></button>
+                                </div>
+                            </div>
+
+                            <!-- FERTIG / ABFAHRT -->
+                            <div class="control-widget">
+                                <span class="control-label">Fertig / Abfahrt</span>
+                                <div class="collar">
+                                    <button class="push-btn btn-green" id="btnFertig" onmousedown="pressButton('abfahrt', true)" onmouseup="pressButton('abfahrt', false)" onmouseleave="pressButton('abfahrt', false)"></button>
+                                </div>
+                            </div>
+
+                            <!-- GROUP TRACK: SLOW & SPEED POTI -->
+                            <div class="group-track-2">
+                                <!-- SLOW (LANGSAM) -->
+                                <div class="control-widget widget-slow">
+                                    <span class="control-label">Langsam</span>
+                                    <div class="rotary-knob-base" id="knobSlow" onclick="clickKnob(event, 'slow')">
+                                        <div class="ticks-container">
+                                            <div class="tick-label tick-left" onclick="selectSlow(event, 'normal')">Normal</div>
+                                            <div class="tick-label tick-top" onclick="selectSlow(event, 'slow1')">L1</div>
+                                            <div class="tick-label tick-right" onclick="selectSlow(event, 'slow2')">L2</div>
+                                        </div>
+                                        <div class="knob-handle" id="handleSlow" style="transform: rotate(-45deg);"></div>
+                                    </div>
+                                </div>
+
+                                <!-- SPEED POTENTIOMETER -->
+                                <div class="control-widget">
+                                    <span class="control-label" style="margin-bottom: 2px;">Speed</span>
+                                    <div class="poti-collar">
+                                        <div class="poti-knob" id="potiKnob">
+                                            <div class="poti-indicator" id="potiIndicator" style="transform: rotate(-135deg);"></div>
+                                        </div>
+                                        <div class="poti-display" id="potiDisplay">0.5 m/s</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- End Grid -->
+                </div> <!-- End Desk Inner -->
+            </div> <!-- End Desk Outer -->
+        </div>
+    </main>
+
+    <script>
+        // --- Sounds disabled ---
+        function playClickSound() {}
+        function startAlarmSound() {}
+        function stopAlarmSound() {}
+
+        // --- System State ---
+        const state = {
+            isConnected: false,
+            isSimulation: true,
+            uptime: 0,
+            distance: 41.6,
+            load: 0,
+            nothalt: false,
+            sibre: false,
+            halt: false,
+            espNowConnected: false,
+            speed: 0.0,          // Current actual speed (m/s)
+            targetSpeed: 0.5,    // from POTI (0.5 - 8.0 m/s)
+            direction: 'forward',// 'forward' or 'backwards'
+            slowMode: 'normal',  // 'normal', 'slow1', 'slow2'
+            ledColor: { r: 0, g: 0, b: 0 },
+            sensors: {
+                astLeft: false,
+                astRight: false,
+                gstLeft: false,
+                gstRight: false
+            },
+            gondolas: [
+                { id: 1, zone: 'rightTrack', progress: 15, isStopped: false },
+                { id: 2, zone: 'leftTrack', progress: 50, isStopped: false },
+                { id: 3, zone: 'rightTrack', progress: 80, isStopped: false }
+            ],
+            gondolaConfig: { gondolaCount: 3, trackLength: 400000, gondolaDistance: 10000, currentRopeSteps: 0 }
+        };
+
+        // --- Core logic ---
+        function initApp() {
+            // Initial UI setup (defaults to disconnected)
+            updateConnectionVisuals();
+            updateNothaltVisuals();
+            updateSibreVisuals();
+            updatePotiVisuals(state.targetSpeed);
+
+            fetchStatus()
+                .then(() => {
+                    setInterval(fetchStatus, 250);
+                })
+                .catch(() => {
+                    activateSimulationMode();
+                });
+        }
+
+        function fetchStatus() {
+            return fetch('/status')
+                .then(res => {
+                    if (!res.ok) throw new Error("HTTP error " + res.status);
+                    return res.json();
+                })
+                .then(msg => {
+                    updateConnectionStatus(true, 'Verbunden');
+                    handleEspMessage(msg);
+                })
+                .catch(err => {
+                    updateConnectionStatus(false, 'Verbindungsfehler');
+                    throw err;
+                });
+        }
+
+        function updateConnectionStatus(connected, text) {
+            state.isConnected = connected;
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText');
+            
+            if (connected) {
+                if (dot) dot.className = "status-dot connected";
+                if (txt) txt.textContent = text;
+            } else {
+                if (dot) dot.className = "status-dot";
+                if (txt) txt.textContent = text;
+            }
+        }
+
+        function activateSimulationMode() {
+            if (!state.isSimulation) {
+                state.isSimulation = true;
+                const banner = document.getElementById('simBanner');
+                if (banner) banner.style.display = 'block';
+                updateConnectionStatus(false, 'Simulationsmodus');
+            }
+        }
+
+        function sendCommand(cmd) {
+            if (state.isConnected) {
+                fetch('/cmd', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cmd)
+                }).catch(err => console.error("Befehl fehlgeschlagen:", err));
+            } else {
+                console.log("Simulierter Befehl gesendet:", cmd);
+            }
+        }
+
+        // --- Message Handler (ESP -> WebUI) ---
+        function handleEspMessage(msg) {
+            if (msg.uptime !== undefined) state.uptime = msg.uptime;
+            if (msg.distance !== undefined) state.distance = msg.distance;
+            
+            if (msg.speed !== undefined) {
+                state.speed = msg.speed; // Expected in m/s (0.0 to 8.0)
+            }
+            
+            if (msg.sensors !== undefined) {
+                state.sensors.astLeft = !!msg.sensors.astLeft;
+                state.sensors.astRight = !!msg.sensors.astRight;
+                state.sensors.gstLeft = !!msg.sensors.gstLeft;
+                state.sensors.gstRight = !!msg.sensors.gstRight;
+                updateSensorLEDs();
+            }
+            
+            if (msg.nothalt !== undefined) {
+                state.nothalt = !!msg.nothalt;
+                updateNothaltVisuals();
+            }
+            
+            if (msg.sibre !== undefined) {
+                state.sibre = !!msg.sibre;
+                updateSibreVisuals();
+            }
+
+            if (msg.gstVirtualRopeSteps !== undefined) {
+                state.gstVirtualRopeSteps = msg.gstVirtualRopeSteps;
+            }
+            if (msg.gstHoldingGondola !== undefined) {
+                state.gstHoldingGondola = !!msg.gstHoldingGondola;
+            }
+            
+            if (msg.halt !== undefined) {
+                state.halt = !!msg.halt;
+            }
+            
+            if (msg.esp_now_connected !== undefined) {
+                state.espNowConnected = !!msg.esp_now_connected;
+                updateConnectionVisuals();
+            }
+
+            if (msg.ledColor !== undefined) {
+                state.ledColor = msg.ledColor;
+                updateLedColorVisuals();
+            }
+
+            if (msg.gondolas !== undefined) {
+                state.gondolas = msg.gondolas;
+            }
+
+            if (msg.gondolaConfig !== undefined) {
+                state.gondolaConfig = msg.gondolaConfig;
+                updateGondolaConfigUI();
+            }
+        }
+
+        // --- Tabs navigation ---
+        function switchTab(tabId) {
+            playClickSound(200, 0.04);
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            const contentEl = document.getElementById(tabId);
+            if (contentEl) contentEl.classList.add('active');
+            
+            const idx = tabId === 'overview' ? 0 : 1;
+            const btn = document.querySelectorAll('.tab-btn')[idx];
+            if (btn) btn.classList.add('active');
+        }
+
+        // --- HMI View and Dialog Handlers ---
+        function toggleHmiView() {
+            playClickSound(180, 0.05);
+            const opView = document.getElementById('hmiViewOperations');
+            const trView = document.getElementById('hmiViewTrack');
+            if (opView && trView) {
+                if (opView.classList.contains('active')) {
+                    opView.classList.remove('active');
+                    trView.classList.add('active');
+                } else {
+                    trView.classList.remove('active');
+                    opView.classList.add('active');
+                }
+            }
+        }
+
+        function toggleHmiInfo() {
+            playClickSound(180, 0.05);
+            const modal = document.getElementById('hmiInfoModal');
+            if (modal) {
+                modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+            }
+        }
+
+        function toggleHmiSettings() {
+            playClickSound(180, 0.05);
+            const modal = document.getElementById('hmiSettingsModal');
+            if (modal) {
+                modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+            }
+        }
+
+        function toggleHmiBtn(btnId) {
+            playClickSound(180, 0.05);
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            if (btnId === 'hmiBtnPassengerDeactivated') {
+                btn.classList.toggle('warning');
+                const isDeactivated = btn.classList.contains('warning');
+                sendCommand({ action: "setPassengerDeactivated", value: isDeactivated });
+            } else {
+                btn.classList.toggle('active');
+                const isActive = btn.classList.contains('active');
+                sendCommand({ action: "setOperationMode", mode: btnId, value: isActive });
+            }
+        }
+
+        function selectBahnhofMode(mode) {
+            playClickSound(180, 0.05);
+            const btnNormal = document.getElementById('hmiBtnNormalMode');
+            const btnEvening = document.getElementById('hmiBtnGarageEvening');
+            const btnMorning = document.getElementById('hmiBtnGarageMorning');
+            
+            if (btnNormal) btnNormal.classList.remove('active');
+            if (btnEvening) btnEvening.classList.remove('active');
+            if (btnMorning) btnMorning.classList.remove('active');
+            
+            const activeBtn = mode === 'normal' ? btnNormal : (mode === 'evening' ? btnEvening : btnMorning);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            sendCommand({ action: "setBahnhofMode", value: mode });
+            
+            if (state.isSimulation) {
+                const chkPosition = document.getElementById('hmiCheckPosition');
+                const chkAux = document.getElementById('hmiCheckAux');
+                const chkReady = document.getElementById('hmiCheckReady');
+                
+                if (mode === 'normal') {
+                    if (chkPosition) { chkPosition.className = "hmi-check-icon checked"; chkPosition.textContent = "✔"; }
+                    if (chkAux) { chkAux.className = "hmi-check-icon checked"; chkAux.textContent = "✔"; }
+                    if (chkReady) { chkReady.className = "hmi-check-icon checked"; chkReady.textContent = "✔"; }
+                } else {
+                    if (chkPosition) { chkPosition.className = "hmi-check-icon"; chkPosition.textContent = ""; }
+                    if (chkAux) { chkAux.className = "hmi-check-icon checked"; chkAux.textContent = "✔"; }
+                    if (chkReady) { chkReady.className = "hmi-check-icon"; chkReady.textContent = ""; }
+                }
+            }
+        }
+
+        function pressHmiMove(direction) {
+            playClickSound(120, 0.04);
+            sendCommand({ action: "manualMove", direction: direction, state: true });
+            if (state.isSimulation) {
+                const sign = (direction === 'left' || direction === 'free-left') ? -1 : 1;
+                state.speed = sign * 1.5; 
+                state.direction = sign > 0 ? 'forward' : 'backwards';
+            }
+        }
+
+        function releaseHmiMove() {
+            sendCommand({ action: "manualMove", state: false });
+            if (state.isSimulation) {
+                state.speed = 0.0;
+            }
+        }
+
+        // Opacity toggling for monitor screen "off" state
+        function shutdownHmi() {
+            playClickSound(100, 0.2, 'sawtooth');
+            const screen = document.querySelector('.hmi-screen');
+            if (screen) {
+                if (screen.style.opacity === '0') {
+                    screen.style.opacity = '1';
+                    screen.style.pointerEvents = 'auto';
+                } else {
+                    screen.style.opacity = '0';
+                    screen.style.pointerEvents = 'none';
+                }
+            }
+        }
+
+        // --- Rotary Switch Rotations & Custom Click Handling ---
+        const directionAngles = { 'forward': -35, 'backwards': 35 };
+        const directionSequence = ['forward', 'backwards'];
+
+        const slowAngles = { 'normal': -45, 'slow1': 0, 'slow2': 45 };
+        const slowSequence = ['normal', 'slow1', 'slow2'];
+
+        function getSpeedLimit() {
+            if (state.slowMode === 'slow1') return 2.0; 
+            if (state.slowMode === 'slow2') return 0.5; 
+            return 8.0; 
+        }
+
+        function clickKnob(event, type) {
+            event.stopPropagation();
+            const rect = event.currentTarget.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const center = rect.width / 2;
+            const direction = clickX < center ? -1 : 1;
+            
+            if (type === 'slow') {
+                const curIdx = slowSequence.indexOf(state.slowMode);
+                let nextIdx = curIdx + direction;
+                if (nextIdx >= 0 && nextIdx < slowSequence.length) {
+                    setSlowMode(slowSequence[nextIdx]);
+                }
+            } else if (type === 'direction') {
+                const nextDir = direction < 0 ? 'forward' : 'backwards';
+                setDirection(nextDir);
+            }
+        }
+
+        function setSlowMode(mode) {
+            if (state.slowMode === mode) return;
+            playClickSound(150, 0.08, 'triangle');
+            state.slowMode = mode;
+            const handle = document.getElementById('handleSlow');
+            if (handle) handle.style.transform = `rotate(${slowAngles[state.slowMode]}deg)`;
+            sendCommand({ action: "setSlowMode", value: state.slowMode });
+
+            if (state.isSimulation) {
+                const limit = getSpeedLimit();
+                if (state.targetSpeed > limit) {
+                    updatePotiVisuals(state.targetSpeed);
+                }
+            }
+        }
+
+        // Explicit click handler for the tick labels
+        function selectSlow(event, mode) {
+            event.stopPropagation();
+            setSlowMode(mode);
+        }
+
+        function setDirection(dir) {
+            if (state.direction === dir) return;
+            playClickSound(150, 0.08, 'triangle');
+            state.direction = dir;
+            const handle = document.getElementById('handleDirection');
+            if (handle) handle.style.transform = `rotate(${directionAngles[state.direction]}deg)`;
+            sendCommand({ action: "setDirection", value: state.direction });
+            
+            const valDir = document.getElementById('valDirection');
+            if (valDir) {
+                valDir.textContent = state.direction === 'forward' ? 'Vorwärts' : 'Rückwärts';
+                valDir.style.color = state.direction === 'forward' ? '#63b3ed' : '#fc8181';
+            }
+        }
+
+        function selectDirection(event, dir) {
+            event.stopPropagation();
+            setDirection(dir);
+        }
+
+        // --- Push Buttons Handlers ---
+        function pressButton(btnId, isPressed) {
+            const btn = document.getElementById(getButtonElementId(btnId));
+            if (!btn) return;
+            if (isPressed) {
+                btn.classList.add('active');
+                playClickSound(180, 0.05);
+                if (btnId === 'alarm') startAlarmSound();
+                sendCommand({ action: "buttonPress", button: btnId, state: true });
+            } else {
+                btn.classList.remove('active');
+                if (btnId === 'alarm') stopAlarmSound();
+                sendCommand({ action: "buttonPress", button: btnId, state: false });
+            }
+        }
+
+        function getButtonElementId(btnId) {
+            switch(btnId) {
+                case 'alarm': return 'btnAlarm';
+                case 'fahrt_req': return 'btnFahrtReq';
+                case 'anwurf': return 'btnAnwurf';
+                case 'abfahrt': return 'btnFertig';
+                default: return '';
+            }
+        }
+
+        function triggerHalt() {
+            playClickSound(110, 0.08);
+            const btn = document.getElementById('btnHalt');
+            if (btn) {
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 250);
+            }
+            if (state.isSimulation) {
+                state.targetSpeed = 0.0;
+                updatePotiVisuals(0.0);
+            }
+            sendCommand({ action: "halt" });
+        }
+
+        function toggleNothalt() {
+            state.nothalt = !state.nothalt;
+            playClickSound(state.nothalt ? 80 : 160, state.nothalt ? 0.15 : 0.08, 'sawtooth');
+            
+            if (state.nothalt) {
+                if (state.isSimulation) {
+                    state.speed = 0.0;
+                    state.targetSpeed = 0.0;
+                    updatePotiVisuals(0.0);
+                }
+            }
+            updateNothaltVisuals();
+            sendCommand({ action: "nothalt", value: state.nothalt });
+        }
+        function updateConnectionVisuals() {
+            const btnAnwurf = document.getElementById('btnAnwurf');
+            const hmiConnBtn = document.getElementById('hmiConnBtn');
+            const espNowStatusPill = document.getElementById('espNowStatusPill');
+            const espNowStatusDot = document.getElementById('espNowStatusDot');
+            const espNowStatusText = document.getElementById('espNowStatusText');
+
+            if (!state.espNowConnected) {
+                btnAnwurf.style.opacity = '0.3';
+                btnAnwurf.style.pointerEvents = 'none';
+                if (hmiConnBtn) hmiConnBtn.style.color = '#ef4444'; // rot
+                if (espNowStatusDot) espNowStatusDot.style.backgroundColor = '#ef4444';
+                if (espNowStatusText) espNowStatusText.textContent = 'GST getrennt';
+            } else {
+                btnAnwurf.style.opacity = '1';
+                btnAnwurf.style.pointerEvents = 'auto';
+                if (hmiConnBtn) hmiConnBtn.style.color = '#22c55e'; // grün
+                if (espNowStatusDot) espNowStatusDot.style.backgroundColor = '#22c55e';
+                if (espNowStatusText) espNowStatusText.textContent = 'GST verbunden';
+            }
+        }
+
+        function updateNothaltVisuals() {
+            const btn = document.getElementById('btnNothalt');
+            const overlay = document.getElementById('emergencyOverlay');
+            
+            if (state.nothalt) {
+                if (btn) btn.classList.add('latched');
+                if (overlay) overlay.style.display = 'block';
+            } else {
+                if (btn) btn.classList.remove('latched');
+                if (overlay) overlay.style.display = 'none';
+            }
+
+            const valMode = document.getElementById('valMode');
+            if (valMode) {
+                if (state.nothalt) {
+                    valMode.textContent = "NOTHALT";
+                    valMode.style.color = "var(--color-red)";
+                } else if (!state.sibre) {
+                    valMode.textContent = state.speed > 0 ? "Fahrbetrieb" : "Bereit";
+                    valMode.style.color = state.speed > 0 ? "var(--color-green)" : "#f6ad55";
+                }
+            }
+        }
+
+        function toggleSibre() {
+            state.sibre = !state.sibre;
+            playClickSound(state.sibre ? 90 : 170, state.sibre ? 0.12 : 0.08, 'sawtooth');
+            
+            if (state.sibre) {
+                if (state.isSimulation) {
+                    state.speed = 0.0;
+                    state.targetSpeed = 0.0;
+                    updatePotiVisuals(0.0);
+                }
+            }
+            updateSibreVisuals();
+            sendCommand({ action: "sibre", value: state.sibre });
+        }
+
+        function updateSibreVisuals() {
+            const btn = document.getElementById('btnSibre');
+            if (btn) {
+                if (state.sibre) {
+                    btn.classList.add('latched');
+                } else {
+                    btn.classList.remove('latched');
+                }
+            }
+
+            const valMode = document.getElementById('valMode');
+            if (valMode) {
+                if (state.sibre) {
+                    valMode.textContent = "SICHERHEITSBREMSE";
+                    valMode.style.color = "var(--color-red)";
+                } else if (!state.nothalt) {
+                    valMode.textContent = state.speed > 0 ? "Fahrbetrieb" : "Bereit";
+                    valMode.style.color = state.speed > 0 ? "var(--color-green)" : "#f6ad55";
+                }
+            }
+        }
+
+        // --- Dragging / Scrolling Speed Potentiometer ---
+        const potiKnob = document.getElementById('potiKnob');
+        const potiIndicator = document.getElementById('potiIndicator');
+        const potiDisplay = document.getElementById('potiDisplay');
+        
+        let isDraggingPoti = false;
+        let startAngle = 0;
+        let currentPotiAngle = -135; 
+
+        const minAngle = -135;
+        const maxAngle = 135;
+
+        if (potiKnob) {
+            potiKnob.addEventListener('pointerdown', (e) => {
+                if (state.nothalt || state.sibre) return; 
+                isDraggingPoti = true;
+                potiKnob.setPointerCapture(e.pointerId);
+                
+                const rect = potiKnob.getBoundingClientRect();
+                const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                startAngle = Math.atan2(e.clientY - center.y, e.clientX - center.x) * 180 / Math.PI;
+                e.preventDefault();
+            });
+
+            potiKnob.addEventListener('pointermove', (e) => {
+                if (!isDraggingPoti) return;
+                
+                const rect = potiKnob.getBoundingClientRect();
+                const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                const angle = Math.atan2(e.clientY - center.y, e.clientX - center.x) * 180 / Math.PI;
+                
+                let delta = angle - startAngle;
+                if (delta > 180) delta -= 360;
+                if (delta < -180) delta += 360;
+                
+                let nextAngle = currentPotiAngle + delta;
+                if (nextAngle < minAngle) nextAngle = minAngle;
+                if (nextAngle > maxAngle) nextAngle = maxAngle;
+                
+                currentPotiAngle = nextAngle;
+                startAngle = angle;
+                
+                updatePotiFromAngle();
+            });
+
+            potiKnob.addEventListener('pointerup', () => {
+                if (!isDraggingPoti) return;
+                isDraggingPoti = false;
+                playClickSound(300, 0.02);
+                sendCommand({ action: "setSpeed", value: state.targetSpeed });
+            });
+
+            potiKnob.addEventListener('wheel', (e) => {
+                if (state.nothalt || state.sibre) return;
+                e.preventDefault();
+                
+                const step = 270 * 0.025 * Math.sign(-e.deltaY);
+                let nextAngle = currentPotiAngle + step;
+                if (nextAngle < minAngle) nextAngle = minAngle;
+                if (nextAngle > maxAngle) nextAngle = maxAngle;
+                
+                currentPotiAngle = nextAngle;
+                updatePotiFromAngle();
+                sendCommand({ action: "setSpeed", value: state.targetSpeed });
+            }, { passive: false });
+        }
+
+        function updatePotiFromAngle() {
+            const rawSpeed = ((currentPotiAngle - minAngle) / 270) * (8.0 - 0.5) + 0.5;
+            let roundedSpeed = Math.round(rawSpeed * 10) / 10;
+            
+            const limit = getSpeedLimit();
+            const displaySpeed = Math.min(roundedSpeed, limit);
+            state.targetSpeed = roundedSpeed; 
+            
+            if (potiIndicator) potiIndicator.style.transform = `rotate(${currentPotiAngle}deg)`;
+            if (potiDisplay) potiDisplay.textContent = `${displaySpeed.toFixed(1)} m/s`;
+            
+            if (state.isSimulation) {
+                state.speed = displaySpeed;
+            }
+        }
+
+        function updatePotiVisuals(speedMps) {
+            if (speedMps < 0.5) speedMps = 0.5;
+            state.targetSpeed = speedMps;
+            currentPotiAngle = minAngle + ((speedMps - 0.5) / (8.0 - 0.5)) * 270;
+            
+            const limit = getSpeedLimit();
+            const displaySpeed = Math.min(speedMps, limit);
+
+            if (potiIndicator) potiIndicator.style.transform = `rotate(${currentPotiAngle}deg)`;
+            if (potiDisplay) potiDisplay.textContent = `${speedMps.toFixed(1)} m/s`;
+        }
+
+        // --- LED & Colors logic ---
+        function sendPresetColor(r, g, b) {
+            playClickSound(220, 0.04);
+            state.ledColor = { r, g, b };
+            updateLedColorVisuals();
+            sendCommand({ action: "ledColor", r, g, b });
+        }
+
+        function sendLedColor(hex) {
+            const r = parseInt(hex.substring(1, 3), 16);
+            const g = parseInt(hex.substring(3, 5), 16);
+            const b = parseInt(hex.substring(5, 7), 16);
+            
+            state.ledColor = { r, g, b };
+            updateLedColorVisuals();
+            sendCommand({ action: "ledColor", r, g, b });
+        }
+
+        function updateLedColorVisuals() {
+            const rgbStr = `rgb(${state.ledColor.r}, ${state.ledColor.g}, ${state.ledColor.b})`;
+            const glowStr = `0 0 15px rgba(${state.ledColor.r}, ${state.ledColor.g}, ${state.ledColor.b}, 0.8)`;
+            
+            const dot = document.getElementById('hmiLedColorStatus');
+            if (dot) {
+                dot.style.background = rgbStr;
+                dot.style.boxShadow = glowStr;
+            }
+            
+            const picker = document.getElementById('hmiLedColorPicker');
+            if (picker) {
+                const rgbToHex = (r, g, b) => '#' + [r, g, b].map(x => {
+                    const hex = x.toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                }).join('');
+                picker.value = rgbToHex(state.ledColor.r, state.ledColor.g, state.ledColor.b);
+            }
+        }
+
+        function updateSensorLEDs() {
+            const t1 = document.getElementById('hmiTower1');
+            if (t1) {
+                const astTriggered = state.sensors.astLeft || state.sensors.astRight;
+                t1.setAttribute('fill', astTriggered ? '#ef4444' : '#22c55e');
+            }
+            const t3 = document.getElementById('hmiTower3');
+            if (t3) {
+                const gstTriggered = state.sensors.gstLeft || state.sensors.gstRight;
+                t3.setAttribute('fill', gstTriggered ? '#ef4444' : '#22c55e');
+            }
+        }
+
+        // --- Gondolas logic ---
+        function setGondolaCount(val) {
+            const count = Math.min(10, Math.max(1, parseInt(val) || 3));
+            state.gondolaConfig.gondolaCount = count;
+            sendCommand({ action: "setGondolaCount", value: count });
+            if (state.isSimulation) {
+                adjustGondolaCount(count);
+            }
+        }
+
+        function setTrackLength(val) {
+            const dist = Math.max(1000, parseInt(val) || 400000);
+            state.gondolaConfig.trackLength = dist;
+            sendCommand({ action: "setTrackLength", value: dist });
+        }
+
+        function setGondolaDistance(val) {
+            const dist = Math.max(1000, parseInt(val) || 10000);
+            state.gondolaConfig.gondolaDistance = dist;
+            sendCommand({ action: "setGondolaDistance", value: dist });
+        }
+
+        let isMeasuring = false;
+        let measureStartOdo = 0;
+
+        function startMeasurement() {
+            isMeasuring = true;
+            measureStartOdo = (state.gondolaConfig && state.gondolaConfig.currentRopeSteps) ? state.gondolaConfig.currentRopeSteps : 0;
+        }
+
+        function stopMeasurement() {
+            isMeasuring = false;
+        }
+
+        function updateGondolaConfigUI() {
+            if (!state.gondolaConfig) return;
+            const countInput = document.getElementById('hmiGondolaCount');
+            if (countInput && document.activeElement !== countInput) {
+                countInput.value = state.gondolaConfig.gondolaCount;
+            }
+            const distInput = document.getElementById('hmiTrackLength');
+            if (distInput && document.activeElement !== distInput) {
+                distInput.value = state.gondolaConfig.trackLength;
+            }
+            const gdistInput = document.getElementById('hmiGondolaDistance');
+            if (gdistInput && document.activeElement !== gdistInput) {
+                gdistInput.value = state.gondolaConfig.gondolaDistance;
+            }
+            
+            if (isMeasuring) {
+                const currentOdo = state.gondolaConfig.currentRopeSteps || 0;
+                document.getElementById('hmiMeasureVal').innerText = Math.abs(currentOdo - measureStartOdo);
+            }
+            
+            // Update debug info
+            const debugHolding = document.getElementById('gstDebugHolding');
+            if (debugHolding) debugHolding.innerText = state.gstHoldingGondola ? "YES" : "NO";
+            const debugSteps = document.getElementById('gstDebugSteps');
+            if (debugSteps) debugSteps.innerText = state.gstVirtualRopeSteps !== undefined ? state.gstVirtualRopeSteps : "-";
+        }
+
+        function adjustGondolaCount(count) {
+            const currentCount = state.gondolas.length;
+            if (count === currentCount) return;
+            if (count > currentCount) {
+                const zones = ['rightTrack', 'GST', 'leftTrack', 'AST'];
+                for (let i = currentCount + 1; i <= count; i++) {
+                    const zoneIndex = Math.floor(Math.random() * 4);
+                    const progress = Math.floor(Math.random() * 100);
+                    state.gondolas.push({ id: i, zone: zones[zoneIndex], progress: progress, isStopped: false });
+                }
+            } else {
+                state.gondolas = state.gondolas.slice(0, count);
+            }
+            state.gondolas.forEach((g, idx) => { g.id = idx + 1; });
+        }
+
+        // --- OVERVIEW: DRAW ROPEWAY & GONDOLAS ---
+        let rotationAngleAST = 0;
+        let rotationAngleGST = 0;
+
+        function updateRopewayDrawing() {
+            const group = document.getElementById('hmiGondolaGroup');
+            if (!group) return;
+            group.innerHTML = ''; 
+
+            const speedFactor = (state.speed / 8.0);
+            const dirSign = state.direction === 'forward' ? 1 : -1;
+            const deltaRot = speedFactor * 4 * dirSign;
+            
+            rotationAngleAST = (rotationAngleAST + deltaRot) % 360;
+            rotationAngleGST = (rotationAngleGST + deltaRot) % 360;
+
+            const wheelAST = document.getElementById('hmiWheelAST');
+            if (wheelAST) {
+                wheelAST.setAttribute('transform', `translate(120, 120) rotate(${rotationAngleAST})`);
+            }
+            const wheelGST = document.getElementById('hmiWheelGST');
+            if (wheelGST) {
+                wheelGST.setAttribute('transform', `translate(680, 120) rotate(${rotationAngleGST})`);
+            }
+
+            // Draw current gondolas on schematic loop
+            state.gondolas.forEach(g => {
+                let x = 0;
+                let y = 0;
+
+                // Map numeric zone to string name if needed
+                const zoneNames = ['AST', 'GST', 'leftTrack', 'rightTrack'];
+                let zone = g.zone;
+                if (typeof zone === 'number') {
+                    zone = zoneNames[zone] || 'AST';
+                }
+
+                let progress = g.progress;
+                if (state.direction === 'backwards') {
+                    progress = 1.0 - progress;
+                }
+
+                if (zone === 'rightTrack') {
+                    x = 120 + progress * (680 - 120);
+                    y = 70;
+                } else if (zone === 'GST') {
+                    const theta = -Math.PI / 2 + progress * Math.PI;
+                    x = 680 + Math.cos(theta) * 50;
+                    y = 120 + Math.sin(theta) * 50;
+                } else if (zone === 'leftTrack') {
+                    x = 680 - progress * (680 - 120);
+                    y = 170;
+                } else if (zone === 'AST') {
+                    const theta = Math.PI / 2 + progress * Math.PI;
+                    x = 120 + Math.cos(theta) * 50;
+                    y = 120 + Math.sin(theta) * 50;
+                }
+
+                const gElem = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                // Hanger arm
+                const arm = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                arm.setAttribute('x1', x);
+                arm.setAttribute('y1', y);
+                arm.setAttribute('x2', x);
+                arm.setAttribute('y2', y + 15);
+                arm.setAttribute('stroke', '#475569');
+                arm.setAttribute('stroke-width', '2');
+                gElem.appendChild(arm);
+                
+                // Cabin base
+                const cabin = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                cabin.setAttribute('x', x - 10);
+                cabin.setAttribute('y', y + 15);
+                cabin.setAttribute('width', 20);
+                cabin.setAttribute('height', 15);
+                cabin.setAttribute('rx', '3');
+                
+                cabin.setAttribute('fill', g.isStopped ? 'var(--color-red)' : 'var(--leitner-light-blue)');
+                cabin.setAttribute('stroke', '#ffffff');
+                cabin.setAttribute('stroke-width', '1');
+                gElem.appendChild(cabin);
+                
+                // Windows
+                const win = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                win.setAttribute('x', x - 7);
+                win.setAttribute('y', y + 18);
+                win.setAttribute('width', 14);
+                win.setAttribute('height', 6);
+                win.setAttribute('fill', '#e2e8f0');
+                win.setAttribute('rx', '1');
+                gElem.appendChild(win);
+                
+                // ID Label
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y + 27);
+                text.setAttribute('fill', '#1a202c');
+                text.setAttribute('font-size', '7');
+                text.setAttribute('font-weight', 'bold');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = g.id;
+                gElem.appendChild(text);
+
+                group.appendChild(gElem);
+            });
+        }
+
+        // --- OFFLINE SIMULATION LOOP ---
+        let lastSimTime = Date.now();
+        
+        function runSimulation() {
+            const now = Date.now();
+            const dt = (now - lastSimTime) / 1000; 
+            lastSimTime = now;
+
+            state.uptime += dt;
+
+            // Update HMI clock (HH:MM)
+            const nowClock = new Date();
+            const hmiClock = document.getElementById('hmiClock');
+            if (hmiClock) {
+                hmiClock.textContent = String(nowClock.getHours()).padStart(2, '0') + ':' + String(nowClock.getMinutes()).padStart(2, '0');
+            }
+
+            // Handle speed physics for simulation mode only
+            if (state.isSimulation) {
+                if (state.nothalt || state.sibre) {
+                    state.speed = Math.max(0, state.speed - dt * 8); 
+                } else {
+                    const limit = getSpeedLimit();
+                    const effectiveTargetSpeed = Math.min(state.targetSpeed, limit);
+                    
+                    const speedDiff = effectiveTargetSpeed - state.speed;
+                    if (Math.abs(speedDiff) > 0.05) {
+                        state.speed += Math.sign(speedDiff) * dt * 1.2; 
+                    } else {
+                        state.speed = effectiveTargetSpeed;
+                    }
+                }
+            }
+
+            // Update physical pult speed display (if exists)
+            const valSpeed = document.getElementById('valSpeed');
+            if (valSpeed) {
+                valSpeed.textContent = `${state.speed.toFixed(1)} m/s`;
+            }
+
+            // Update HMI Speedometer values
+            const hmiTargetVal = document.getElementById('hmiTargetSpeedVal');
+            if (hmiTargetVal) {
+                hmiTargetVal.textContent = `${state.targetSpeed.toFixed(1)} m/s`;
+            }
+            const hmiCurrentVal = document.getElementById('hmiCurrentSpeedVal');
+            if (hmiCurrentVal) {
+                hmiCurrentVal.textContent = `${state.speed.toFixed(1)} m/s`;
+            }
+
+            // Update circular progress gauge fill
+            const hmiGaugeFill = document.getElementById('hmiGaugeFill');
+            if (hmiGaugeFill) {
+                const offset = 264 - (Math.min(state.speed, 8.0) / 8.0) * 264;
+                hmiGaugeFill.setAttribute('stroke-dashoffset', offset);
+            }
+
+            // Update motor load percentage
+            let targetLoad = 0;
+            if (state.speed > 0) {
+                targetLoad = 15 + (state.speed / 8.0) * 45;
+                if (state.targetSpeed > state.speed) {
+                    targetLoad += 25;
+                }
+            }
+            state.load = state.load || 0;
+            state.load += (targetLoad - state.load) * 0.1;
+            const hmiLoadVal = document.getElementById('hmiLoadVal');
+            if (hmiLoadVal) {
+                hmiLoadVal.textContent = `${Math.round(state.load)}%`;
+            }
+
+            // Update HMI distance counter
+            state.distance = state.distance || 41.6;
+            if (state.speed > 0) {
+                state.distance += state.speed * dt;
+            }
+            const distEl = document.getElementById('hmiDistanceVal');
+            if (distEl) {
+                distEl.textContent = `${state.distance.toFixed(1)} m`;
+            }
+
+            // Update HMI brake indicators
+            const bbEl = document.getElementById('hmiLedBB');
+            if (bbEl) {
+                const isBraking = state.speed < 0.05;
+                bbEl.className = `hmi-brake-led ${isBraking ? 'red' : 'green'}`;
+            }
+            const sbEl = document.getElementById('hmiLedSB');
+            if (sbEl) {
+                const isSafetyBraking = state.nothalt || state.sibre;
+                sbEl.className = `hmi-brake-led ${isSafetyBraking ? 'red' : 'green'}`;
+            }
+
+            // Update HMI Info Modal fields
+            const infoConn = document.getElementById('hmiInfoConn');
+            if (infoConn) {
+                infoConn.textContent = state.isSimulation ? "Simulationsmodus" : "Verbunden";
+                infoConn.style.color = state.isSimulation ? "#f59e0b" : "#22c55e";
+            }
+            const infoSim = document.getElementById('hmiInfoSim');
+            if (infoSim) {
+                infoSim.textContent = state.isSimulation ? "Simulationsmodus" : "ESP32-S3 Server";
+                infoSim.style.color = state.isSimulation ? "#f59e0b" : "#3b82f6";
+            }
+            const infoRssi = document.getElementById('hmiInfoRssi');
+            if (infoRssi) {
+                infoRssi.textContent = state.isSimulation ? "N/A" : "-56 dBm";
+            }
+            const infoPeers = document.getElementById('hmiInfoPeers');
+            if (infoPeers) {
+                infoPeers.textContent = state.isSimulation ? "1 Peer (GST)" : "1 Peer (GST)";
+            }
+            const infoUptime = document.getElementById('hmiInfoUptime');
+            if (infoUptime) {
+                const hrs = String(Math.floor(state.uptime / 3600)).padStart(2, '0');
+                const mins = String(Math.floor((state.uptime % 3600) / 60)).padStart(2, '0');
+                const secs = String(Math.floor(state.uptime % 60)).padStart(2, '0');
+                infoUptime.textContent = `${hrs}:${mins}:${secs}`;
+            }
+            
+            // Adjust Physical Desk Mode Status label if it exists
+            const valMode = document.getElementById('valMode');
+            if (valMode) {
+                if (state.nothalt) {
+                    valMode.textContent = "NOTHALT";
+                    valMode.style.color = "var(--color-red)";
+                } else if (state.sibre) {
+                    valMode.textContent = "SICHERHEITSBREMSE";
+                    valMode.style.color = "var(--color-red)";
+                } else {
+                    valMode.textContent = state.speed > 0 ? "Fahrbetrieb" : "Bereit";
+                    valMode.style.color = state.speed > 0 ? "var(--color-green)" : "#f6ad55";
+                }
+            }
+
+            
+
+            // Update UI visuals
+            updateSensorLEDs();
+            updateRopewayDrawing();
+
+            requestAnimationFrame(runSimulation);
+        }
+
+        // --- Start Up ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            
+            lastSimTime = Date.now();
+            requestAnimationFrame(runSimulation);
+            
+            updateLedColorVisuals();
+            updateSensorLEDs();
+        });
+    </script>
+</body>
+</html>)rawliteral";
+
+#endif
