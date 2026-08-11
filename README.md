@@ -28,18 +28,18 @@ Ein professionelles, verteiltes Mikrocontroller-Steuerungssystem für ein funkti
 
 ```mermaid
 graph TD
-    Browser[💻 Browser / HMI WebUI] <-->|HTTP REST / WebSocket| AST[🧠 AST ESP32-S3 Master]
-    AST <-->|ESP-NOW Wireless| GST[⚙️ GST ESP32-S3 Slave]
+    Browser["💻 Browser / HMI WebUI"] <-->|HTTP REST / WebSocket| AST["🧠 AST ESP32-S3 Master"]
+    AST <-->|ESP-NOW Wireless| GST["⚙️ GST ESP32-S3 Slave"]
     
-    subgraph Antriebsstation (AST)
-        AST --> MotorRope[Seilmotor - Hauptantrieb]
-        AST --> MotorAST[4x Reibräder-Förderer + Wende]
-        AST --> SensorsAST[2x Lichtschranken Station]
+    subgraph AST_Group ["Antriebsstation (AST)"]
+        AST --> MotorRope["Seilmotor - Hauptantrieb"]
+        AST --> MotorAST["4x Reibräder-Förderer + Wende"]
+        AST --> SensorsAST["2x Lichtschranken Station"]
     end
 
-    subgraph Gegenstation (GST)
-        GST --> MotorGST[8x Reibräder-Förderer + 1x Wende]
-        GST --> SensorsGST[2x Lichtschranken Station]
+    subgraph GST_Group ["Gegenstation (GST)"]
+        GST --> MotorGST["8x Reibräder-Förderer + 1x Wende"]
+        GST --> SensorsGST["2x Lichtschranken Station"]
     end
 ```
 
