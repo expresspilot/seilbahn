@@ -1,6 +1,6 @@
 import re
 
-with open("AST_esp_code/index.html", "r") as f:
+with open("index.html", "r") as f:
     html = f.read()
 
 c_code = f"""#ifndef WEBUI_H
@@ -14,10 +14,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 #endif
 """
 
-with open("AST_esp_code/WebUI.h", "w") as f:
+with open("ast_controller/include/WebUI.h", "w") as f:
     f.write(c_code)
 
-with open("GST_esp_code/WebUI.h", "w") as f:
-    f.write(c_code)
+#with open("gst_controller/include/WebUI.h", "w") as f:
+#    f.write(c_code)
 
-print("Successfully packed index.html into AST_esp_code/WebUI.h and GST_esp_code/WebUI.h")
+print("Successfully packed index.html into ast_controller/include/WebUI.h")

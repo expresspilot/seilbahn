@@ -19,22 +19,11 @@
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
+#include "config.h"
 #include "Gondel.h"
 #include "Ropeway.h"
 #include "WebUI.h"
 #include "Messages.h"
-
-// ============================================================================
-// WLAN-KONFIGURATION
-// ============================================================================
-const char* ssid     = "LGM-02";
-const char* password = "12345678";
-
-// ============================================================================
-// ESP-NOW MAC-ADRESSEN (Kopplung von AST und GST)
-// ============================================================================
-const uint8_t GST_MAC[6] = { 0x14, 0xC1, 0x9F, 0x2B, 0x33, 0xEC };
-const uint8_t AST_MAC[6] = { 0x44, 0x1B, 0xF6, 0xFF, 0x51, 0x60 };
 
 // Globale Zeiger auf die Station und den Webserver
 AntriebsStation* station = nullptr;
