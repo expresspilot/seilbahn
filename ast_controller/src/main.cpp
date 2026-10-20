@@ -32,20 +32,77 @@ WebServer* server        = nullptr;
 /**
  * @brief ESP-NOW Sende-Callback (wird aufgerufen, wenn Daten gesendet wurden)
  */
-void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  // Optionale Diagnose/Logging für Paketsende-Status
-}
+//void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  // Optionale Diagnose/Logging für Paketsende-Status }
 
-/**
- * @brief ESP-NOW Empfangs-Callback (wird aufgerufen, wenn Pakete von der GST empfangen werden)
+
+
+
+//test um in beide richtung status
+void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.printf("[ESP-NOW AST -> GST] %s\n",
+                status == ESP_NOW_SEND_SUCCESS ? "OK" : "FEHLER");
+ }
+
+
+
+
+
+/** * @brief
+ * 
  */
-void onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+// */
+//void onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+// if (len == sizeof(RopewayMessage) && station != nullptr) {
+//  RopewayMessage msg;
+//    memcpy(&msg, incomingData, sizeof(msg));
+//    station->handleMessage(msg);
+//  }
+//}
+
+
+
+//zum testen wo pakete verloren gehen
+
+void onDataRecv(const uint8_t *mac_addr,
+                const uint8_t *incomingData,
+                int len) {
+
+  Serial.printf("[ESP-NOW AST <- GST] RX len=%d expected=%u\n",
+                len, (unsigned)sizeof(RopewayMessage));
+
   if (len == sizeof(RopewayMessage) && station != nullptr) {
     RopewayMessage msg;
     memcpy(&msg, incomingData, sizeof(msg));
+
+    Serial.printf("[ESP-NOW AST <- GST] type=%d\n",
+                  (int)msg.type);
+
     station->handleMessage(msg);
+  } else {
+    Serial.println("[ESP-NOW AST <- GST] PAKET VERWORFEN!");
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @brief Dedicated FreeRTOS Task für den Webserver.
@@ -78,6 +135,15 @@ void setup() {
   // 1. WLAN verbinden (Access Point oder Station Mode)
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+
+
+  //von chat gpt vorübergehend wegen verbindung gst mit ast
+Serial.printf("[WLAN] AST MAC: %s | Kanal: %d\n",
+              WiFi.macAddress().c_str(),
+              WiFi.channel());
+
+
+
   Serial.printf("[WLAN] Verbinde mit '%s' ", ssid);
 
   unsigned long startAttempt = millis();

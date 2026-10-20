@@ -22,6 +22,9 @@
 #include "Gondel.h"
 #include "Ropeway.h"
 #include "Messages.h"
+#include <esp_wifi.h>
+
+
 
 // Globaler Zeiger auf die Gegenstation
 GegenStation* station = nullptr;
@@ -29,20 +32,117 @@ GegenStation* station = nullptr;
 /**
  * @brief ESP-NOW Sende-Callback (wird aufgerufen, wenn Daten an die AST gesendet wurden)
  */
+//id onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+//// Optionale Sendediagnose
+//
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  // Optionale Sendediagnose
+  Serial.printf("[ESP-NOW GST -> AST] %s\n",
+                status == ESP_NOW_SEND_SUCCESS ? "OK" : "FEHLER");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @brief ESP-NOW Empfangs-Callback (wird aufgerufen, wenn Pakete von der AST empfangen werden)
  */
-void onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+
+
+//id onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+//if (len == sizeof(RopewayMessage) && station != nullptr) {
+//  RopewayMessage msg;
+//  memcpy(&msg, incomingData, sizeof(msg));
+//  station->handleMessage(msg);
+//}
+//
+
+//vorübergehend wegen pakete zum testen jetzt 
+//void onDataRecv(const uint8_t *mac_addr,
+//                const uint8_t *incomingData,
+//                int len) {
+//
+//  Serial.printf("[ESP-NOW GST] Paket empfangen: %d Bytes\n", len);
+//
+//  if (len == sizeof(RopewayMessage) && station != nullptr) {
+//    RopewayMessage msg;
+//    memcpy(&msg, incomingData, sizeof(msg));
+//    station->handleMessage(msg);
+//  }
+//}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//zum testen der gesendeteten pakete
+
+
+void onDataRecv(const uint8_t *mac_addr,
+                const uint8_t *incomingData,
+                int len) {
+
+  Serial.printf("[ESP-NOW GST <- AST] RX len=%d expected=%u\n",
+                len, (unsigned)sizeof(RopewayMessage));
+
   if (len == sizeof(RopewayMessage) && station != nullptr) {
     RopewayMessage msg;
     memcpy(&msg, incomingData, sizeof(msg));
+
+    Serial.printf("[ESP-NOW GST <- AST] type=%d\n",
+                  (int)msg.type);
+
     station->handleMessage(msg);
+  } else {
+    Serial.println("[ESP-NOW GST <- AST] PAKET VERWORFEN!");
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @brief Setup-Funktion für den Slave-ESP32 (Gegenstation GST)
@@ -57,6 +157,12 @@ void setup() {
   // 1. WLAN Initialisieren (Station-Modus für ESP-NOW Kanal-Matching)
   WiFi.mode(WIFI_STA);
 
+esp_wifi_set_channel(11, WIFI_SECOND_CHAN_NONE);
+
+Serial.printf("[WLAN] GST MAC: %s | Kanal: %d\n",
+              WiFi.macAddress().c_str(),
+              11);
+
   // 2. ESP-NOW drahtlose Kommunikation initialisieren
   if (esp_now_init() != ESP_OK) {
     Serial.println("[ESP-NOW] Fehler bei der Initialisierung!");
@@ -68,7 +174,7 @@ void setup() {
   // 3. Master (AST) als ESP-NOW Peer hinzufügen
   esp_now_peer_info_t peerInfo = {};
   memset(&peerInfo, 0, sizeof(peerInfo));
-  peerInfo.channel = WiFi.channel();
+  peerInfo.channel = 11 ;
   peerInfo.encrypt = false;
   memcpy(peerInfo.peer_addr, AST_MAC, 6);
 
@@ -80,9 +186,38 @@ void setup() {
 
   // 4. GegenStation-Instanz erstellen
   station = new GegenStation();
-  Serial.println("[Station] GegenStation (Slave) erfolgreich initialisiert.");
+ Serial.println("[Station] GegenStation (Slave) erfolgreich initialisiert.");
   Serial.println("==========================================");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @brief Hauptschleife (Real-Time Schrittmotorsteuerung und Lichtschrankenauswertung)
