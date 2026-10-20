@@ -78,6 +78,21 @@ void onDataRecv(const uint8_t *mac_addr,
     Serial.printf("[ESP-NOW AST <- GST] type=%d\n",
                   (int)msg.type);
 
+//testweise zum schauen was ankommt   kann man auch löschen bis zeile 95 ist nur zum anzeigen im seriellen monitor
+if (msg.type == MSG_HEARTBEAT) {
+  Serial.printf(
+    "[HEARTBEAT] Seilschritte=%ld | Gondel gehalten=%s\n",
+    msg.virtualRopeSteps,
+    msg.isHoldingGondola ? "JA" : "NEIN"
+  );
+}
+
+
+
+
+
+
+
     station->handleMessage(msg);
   } else {
     Serial.println("[ESP-NOW AST <- GST] PAKET VERWORFEN!");
@@ -207,6 +222,7 @@ if (!WiFi.softAP(ssid, password, 1)) {
 Serial.println("[WLAN] Fehler beim Starten des Access Points!");
 return;
 }
+
 
 Serial.printf("[WLAN] WLAN gestartet: %s\n", ssid);
 Serial.printf("[WLAN] AST AP-MAC: %s\n",

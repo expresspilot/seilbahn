@@ -196,6 +196,8 @@ WiFi.macAddress().c_str());
   esp_now_register_send_cb(onDataSent);
   esp_now_register_recv_cb(onDataRecv);
 
+
+ 
   // 3. Master (AST) als ESP-NOW Peer hinzufügen
   esp_now_peer_info_t peerInfo = {};
   memset(&peerInfo, 0, sizeof(peerInfo));
@@ -208,6 +210,12 @@ WiFi.macAddress().c_str());
     return;
   }
   Serial.println("[ESP-NOW] Kopplung mit Antriebsstation (AST) OK.");
+
+
+
+
+
+
 
   // 4. GegenStation-Instanz erstellen
   station = new GegenStation();
