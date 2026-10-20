@@ -154,14 +154,39 @@ void setup() {
   Serial.println("  3S-Seilbahn Modell - Gegenstation (GST)");
   Serial.println("==========================================\n");
 
-  // 1. WLAN Initialisieren (Station-Modus für ESP-NOW Kanal-Matching)
-  WiFi.mode(WIFI_STA);
+  // 1. WLAN Initialisieren (Station-Modus für ESP-NOW Kanal-Matching)           so wenn zuhause wlan verwendet wird 
+//  WiFi.mode(WIFI_STA);
 
-esp_wifi_set_channel(11, WIFI_SECOND_CHAN_NONE);
+//esp_wifi_set_channel(11, WIFI_SECOND_CHAN_NONE);
 
-Serial.printf("[WLAN] GST MAC: %s | Kanal: %d\n",
-              WiFi.macAddress().c_str(),
-              11);
+//Serial.printf("[WLAN] GST MAC: %s | Kanal: %d\n",
+  //            WiFi.macAddress().c_str(),
+ //             11);
+//
+
+
+
+
+// 1. WLAN initialisieren (kein Router, nur ESP-NOW)                               so wenn access point esp verwendet wird
+WiFi.mode(WIFI_STA);
+WiFi.disconnect();
+
+// Muss mit dem AST-Access-Point übereinstimmen: Kanal 1
+esp_err_t channelResult =
+esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
+
+if (channelResult != ESP_OK) {
+Serial.printf("[WLAN] Kanal setzen fehlgeschlagen: %d\n",
+(int)channelResult);
+return;
+}
+
+Serial.printf("[WLAN] GST MAC: %s | Kanal: 1\n",
+WiFi.macAddress().c_str());
+
+
+
+
 
   // 2. ESP-NOW drahtlose Kommunikation initialisieren
   if (esp_now_init() != ESP_OK) {
@@ -174,7 +199,7 @@ Serial.printf("[WLAN] GST MAC: %s | Kanal: %d\n",
   // 3. Master (AST) als ESP-NOW Peer hinzufügen
   esp_now_peer_info_t peerInfo = {};
   memset(&peerInfo, 0, sizeof(peerInfo));
-  peerInfo.channel = 11 ;
+  peerInfo.channel = 1 ;
   peerInfo.encrypt = false;
   memcpy(peerInfo.peer_addr, AST_MAC, 6);
 

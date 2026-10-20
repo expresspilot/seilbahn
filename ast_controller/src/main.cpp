@@ -108,8 +108,30 @@ void onDataRecv(const uint8_t *mac_addr,
  * @brief Dedicated FreeRTOS Task für den Webserver.
  * Runs on Core 0, to leave Core 1 100% free for real-time motor/stepper loops.
  */
-void webServerTask(void *pvParameters) {
+
+// vorübergehend weil verbindet aber server nicht erreichbar
+// void webServerTask(void *pvParameters) {
   // Warte kurz, bis der Webserver in setup() instanziiert wurde
+//  while (server == nullptr) {
+//    vTaskDelay(pdMS_TO_TICKS(10));
+//  }
+
+//  Serial.println("[FreeRTOS Core 0] Webserver-Task gestartet.");
+
+//  for (;;) {
+//    server->handleClient();
+//   server = new WebServer(80);
+   
+   // vTaskDelay(pdMS_TO_TICKS(1)); // Yield for WiFi stack processing
+ // }
+// }
+
+
+
+
+// stattdessen diese eingefügt bis zeile 146 
+void webServerTask(void *pvParameters) {
+  // Warten, bis der Webserver in setup() erstellt wurde
   while (server == nullptr) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
@@ -118,9 +140,14 @@ void webServerTask(void *pvParameters) {
 
   for (;;) {
     server->handleClient();
-    vTaskDelay(pdMS_TO_TICKS(1)); // Yield for WiFi stack processing
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
+
+
+
+
+
 
 /**
  * @brief Arduino Setup Funktion
@@ -132,33 +159,61 @@ void setup() {
   Serial.println("  3S-Seilbahn Modell - Antriebsstation (AST)");
   Serial.println("==========================================\n");
 
-  // 1. WLAN verbinden (Access Point oder Station Mode)
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  // 1. WLAN verbinden (Access Point oder Station Mode)       das wenn haus router genommen wird
+ // WiFi.mode(WIFI_STA);
+ // WiFi.begin(ssid, password);
 
 
-  //von chat gpt vorübergehend wegen verbindung gst mit ast
-Serial.printf("[WLAN] AST MAC: %s | Kanal: %d\n",
-              WiFi.macAddress().c_str(),
-              WiFi.channel());
+  //    von chat gpt vorübergehend wegen verbindung gst mit ast
+// Serial.printf("[WLAN] AST MAC: %s | Kanal: %d\n",
+ //             WiFi.macAddress().c_str(),
+ //             WiFi.channel());
 
 
 
-  Serial.printf("[WLAN] Verbinde mit '%s' ", ssid);
+ // Serial.printf("[WLAN] Verbinde mit '%s' ", ssid);
 
-  unsigned long startAttempt = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 8000) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println();
+ // unsigned long startAttempt = millis();
+ // while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 8000) {
+ //   delay(500);
+ //   Serial.print(".");
+ // }
+ // Serial.println();
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.printf("[WLAN] Erfolgreich verbunden! IP: %s | Kanal: %d\n",
-                  WiFi.localIP().toString().c_str(), WiFi.channel());
-  } else {
-    Serial.println("[WLAN] Verbindung fehlgeschlagen. Starte ohne IP-Verbindung.");
-  }
+ // if (WiFi.status() == WL_CONNECTED) {
+ //   Serial.printf("[WLAN] Erfolgreich verbunden! IP: %s | Kanal: %d\n",
+ //                 WiFi.localIP().toString().c_str(), WiFi.channel());
+ // } else {
+ //   Serial.println("[WLAN] Verbindung fehlgeschlagen. Starte ohne IP-Verbindung.");
+ // }
+
+
+
+
+
+
+
+
+// das wenn access point
+
+//KOPIE von dem obendrüber punkt1 so wenn local access point oben das wenn über haus wlan router
+
+    // 1. WLAN verbinden (Access Point oder Station Mode)
+// 1. Eigenes WLAN für die AST-WebUI starten
+
+WiFi.mode(WIFI_AP);
+
+if (!WiFi.softAP(ssid, password, 1)) {
+Serial.println("[WLAN] Fehler beim Starten des Access Points!");
+return;
+}
+
+Serial.printf("[WLAN] WLAN gestartet: %s\n", ssid);
+Serial.printf("[WLAN] AST AP-MAC: %s\n",
+WiFi.softAPmacAddress().c_str());
+Serial.printf("[WLAN] WebUI IP: %s | Kanal: %d\n",
+WiFi.softAPIP().toString().c_str(),
+WiFi.channel());
 
   // 2. ESP-NOW drahtloses Kommunikationsprotokoll initialisieren
   if (esp_now_init() != ESP_OK) {

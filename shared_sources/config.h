@@ -5,8 +5,14 @@
 // ============================================================================
 // WLAN-KONFIGURATION
 // ============================================================================
-const char *ssid = "UPC814C61F";
-const char *password = "h5t4xwhyzdcP";
+
+// MIT upc wlan zuhause verbinden dies
+//const char *ssid = "UPC814C61F";
+//const char *password = "h5t4xwhyzdcP";
+
+// Handy mit esp wlan /Accesspoint verbinden diese 2 zeilen
+const char* ssid = "AST-WebUI";
+const char* password = "AST123456";
 
 // ============================================================================
 // ESP-NOW MAC-ADRESSEN (Kopplung von AST und GST)
